@@ -79,7 +79,7 @@
     var pq = Math.random() < 0.34;
     var isDisabled = !!disabled[actor];
     var deny = isDisabled || (!initial && Math.random() < 0.08);
-    var mode = pq ? '<span class="badge pq">protected_read</span>' : '<span class="badge std">read</span>';
+    var mode = pq ? '<span class="badge pq" title="protected_read">PQ</span>' : '<span class="badge std">read</span>';
     var decision = deny ? '<span class="badge deny">DENY</span>' : '<span class="badge allow">ALLOW</span>';
     var tr = document.createElement("tr");
     if (isDisabled) tr.className = "row-blocked";
@@ -154,7 +154,7 @@
     if (!verifyLine) return;
     verifyLine.innerHTML = ok
       ? '<span data-icon="check"></span> proof verified · ' + rule + " · " + actor
-      : '<span class="ico" style="color:#e39a8c"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span> denied · ' + rule + " · " + actor;
+      : '<span class="ico" style="color:var(--danger)"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span> denied · ' + rule + " · " + actor;
   }
   if (kemRun) {
     kemRun.addEventListener("click", async function () {

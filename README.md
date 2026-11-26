@@ -3,9 +3,9 @@
 Static, Vercel-ready front end for **Checkmate**: a server-side identity killswitch
 built around instant revocation and NIST ML-KEM-768 (Kyber768) post-quantum
 encapsulation. Content covers the ZeroRevoke threat model, engine contract, and
-the six dashboard modules. The visual language studies an editorial moss/paper
-reference for layout rhythm, spacing, and motion; all copy, code, and imagery here
-are original and no third-party source code or artwork is copied.
+the six dashboard modules. The visual language follows an Apple / macOS light
+monochrome system; all copy, code, and brand artwork here are original and no
+third-party source code or artwork is copied.
 
 ## Routes
 
@@ -32,7 +32,7 @@ assets/
   css/console.css     dashboard panels, tables, badges, KPI cards
   js/site.js          icons, nav, reveals, accordion, carousel, reader modal, particles
   js/console.js       demonstration state, live stream, revoke flow, KEM demo, audit export
-  img/                original moss / forest photography used as atmosphere plates
+  img/brand/         chess-sticker brand marks (WebP)
   icons/favicon.svg   chess-king mark
 index.html
 dashboard.html
@@ -41,14 +41,14 @@ vercel.json           clean URLs, long cache for /assets
 
 ## Design system
 
-- Palette: warm paper `#f3f2e9`, night forest `#18221c` / `#202c22`, moss `#4a6a3a` / `#8fbf5f`, brick status `#b05545`. No blue or purple tones.
-- Type: Lexend (display, light weights, tight tracking) + JetBrains Mono (labels, indices, hex data).
-- Components: pill segmented nav, metal-rim pill controls, floating cream cards, chapter index labels, accordion threat rows, invariant carousel, module plan cards, giant footer wordmark, dark console panels with mono tables and status badges.
-- Responsive: desktop 1440, laptop 1280, tablet 768, mobile 390; console grids collapse and the nav becomes a toggle menu.
+- Palette: Apple light surfaces `#f5f5f7` / `#ffffff`, ink `#1d1d1f`, secondary `#3a3a3c`, muted `#6e6e73`, hairline `#d2d2d7`; system red `#ff3b30` for denial / locked states. No blue, purple, or green theme tones.
+- Type: Apple system stack (`-apple-system`, SF Pro Display / SF Pro Text) for UI and headlines; SF Mono / Menlo stack for labels, indices, and hex data.
+- Components: translucent blurred toolbar, gray-track segmented controls with white active thumb, white hairline cards with soft shadows, black primary pills, destructive red revoke control, mono data labels, macOS-style window traffic lights on the console, hairline tables and status badges.
+- Responsive: desktop 1440, laptop 1280, tablet 768, mobile 390; console grids collapse and the marketing nav becomes a toggle menu.
 
 ## Interactions
 
-- Scroll reveals with staggered delays; drifting dust particles on dark bands (reduced-motion aware).
+- Scroll reveals with staggered delays (reduced-motion aware).
 - Threat-model accordion; invariant carousel; engine operation selector; engine-contract reader modal.
 - Live stream appending decisions; revoke mutates local state and animates propagation to `0.0 ms`; subsequent revoked-actor rows deny.
 - Encapsulation demo generates key material and an HMAC-SHA-256 proof via Web Crypto with a local fallback; audit lookup renders evidence rows; JSON / CSV export downloads a Blob.
