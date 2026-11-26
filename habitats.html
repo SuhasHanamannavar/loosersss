@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>document.documentElement.className += " js";</script>
+  <title>Habitats — Sylva</title>
+  <meta name="description" content="The four woodland habitats Sylva records and restores: moss carpet, creek line, old growth, and clearing.">
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+
+  <header class="site-head">
+    <a class="brand" href="index.html"><span data-icon="leaf"></span> Sylva</a>
+    <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false" data-icon="menu"></button>
+    <nav class="pill-nav" aria-label="Primary">
+      <a class="seg" href="index.html#grove"><span data-icon="leaf"></span> Grove</a>
+      <a class="seg active" href="habitats.html"><span data-icon="layers"></span> Habitats</a>
+      <a class="seg" href="journal.html"><span data-icon="journal"></span> Journal</a>
+      <a class="seg" href="world.html"><span data-icon="enter"></span> Enter</a>
+    </nav>
+  </header>
+
+  <section class="page-band">
+    <div class="chapter-media"><img src="assets/img/habitat-creek.jpg" alt="Mossy stones and ferns beside a slow woodland creek"></div>
+    <canvas class="dust-canvas" aria-hidden="true"></canvas>
+    <div class="wrap">
+      <span class="kicker" data-reveal style="color: var(--moss-bright)">Habitats</span>
+      <h1 class="section-title" data-reveal>Four places we tend.</h1>
+      <p class="section-lede" data-reveal data-delay="1">Each habitat is recorded, mapped, and allowed to spread on its own timetable.</p>
+    </div>
+  </section>
+
+  <section class="inner-list">
+    <div class="wrap">
+      <div class="hab-grid">
+        <article class="hab-card" data-reveal>
+          <div class="thumb"><img src="assets/img/habitat-moss.jpg" alt="Dense moss carpet with fallen leaves"></div>
+          <div class="body">
+            <span class="kicker">Habitat 01</span>
+            <h3>Moss carpet</h3>
+            <p>Continuous green ground cover that holds moisture between rains and shields the soil from drying wind.</p>
+          </div>
+        </article>
+        <article class="hab-card" data-reveal data-delay="1">
+          <div class="thumb"><img src="assets/img/habitat-creek.jpg" alt="Creek water stepping over moss-covered boulders"></div>
+          <div class="body">
+            <span class="kicker">Habitat 02</span>
+            <h3>The creek line</h3>
+            <p>Stones, shade, and slow water keep the lower woods cool and give ferns a permanent damp edge.</p>
+          </div>
+        </article>
+        <article class="hab-card" data-reveal>
+          <div class="thumb"><img src="assets/img/habitat-oldgrowth.jpg" alt="Tall mossy conifers seen from below in fog"></div>
+          <div class="body">
+            <span class="kicker">Habitat 03</span>
+            <h3>Old growth</h3>
+            <p>Tall trunks and deep shade anchor the upper canopy and drop the slow, steady litter the floor feeds on.</p>
+          </div>
+        </article>
+        <article class="hab-card" data-reveal data-delay="1">
+          <div class="thumb"><img src="assets/img/habitat-clearing.jpg" alt="Sunlit clearing with wildflowers between shrubs"></div>
+          <div class="body">
+            <span class="kicker">Habitat 04</span>
+            <h3>The clearing</h3>
+            <p>Open light where seedlings harden off before the shade returns, and where small native flowers hold through summer.</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <footer class="inner-foot">
+    <div class="wrap">
+      <nav>
+        <a href="index.html">Grove</a>
+        <a href="habitats.html">Habitats</a>
+        <a href="journal.html">Journal</a>
+        <a href="world.html">Living world</a>
+        <a href="ethos.html">Ethos</a>
+      </nav>
+      <span>© <span data-year></span> Sylva — original front-end build</span>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

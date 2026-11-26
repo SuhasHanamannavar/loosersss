@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>document.documentElement.className += " js";</script>
+  <title>Sylva — Into the Living World</title>
+  <meta name="description" content="Sylva is a woodland field study: restoration through patient design, native planting, and a quieter kind of stewardship.">
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+
+  <header class="site-head">
+    <a class="brand" href="index.html"><span data-icon="leaf"></span> Sylva</a>
+    <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false" data-icon="menu"></button>
+    <nav class="pill-nav" aria-label="Primary">
+      <a class="seg active" href="index.html#grove"><span data-icon="leaf"></span> Grove</a>
+      <a class="seg" href="habitats.html"><span data-icon="layers"></span> Habitats</a>
+      <a class="seg" href="journal.html"><span data-icon="journal"></span> Journal</a>
+      <a class="seg" href="world.html"><span data-icon="enter"></span> Enter</a>
+    </nav>
+  </header>
+
+  <!-- 01 · Grove hero -->
+  <section id="grove" class="hero" data-parallax-root>
+    <div class="hero-bg" data-parallax="6"><img src="assets/img/hero-valley.jpg" alt="Moss-covered branch arching over a shallow forest creek beneath misty conifers"></div>
+    <canvas class="dust-canvas" aria-hidden="true"></canvas>
+    <div class="wrap hero-inner">
+      <div class="hero-copy" data-reveal>
+        <h1 class="hero-title">Step into<br>the living world</h1>
+        <p class="hero-lede">We restore wild places through careful planting, native species, and a quieter kind of stewardship.</p>
+        <div class="hero-actions">
+          <a class="btn-pill" href="#journey"><span data-icon="leaf"></span> Explore the work</a>
+          <a class="play-ring" href="#story" aria-label="Open the field note"><span data-icon="play"></span></a>
+        </div>
+      </div>
+      <aside class="hero-side" data-reveal data-delay="2">
+        <div class="stat-row">
+          <div class="stat-chip">
+            <span data-icon="canopy"></span>
+            <span><span class="lbl">Canopy restored</span><span class="val"><span data-count="282">0</span> ha</span></span>
+          </div>
+          <div class="stat-chip">
+            <span data-icon="sun"></span>
+            <span><span class="lbl">Native species</span><span class="val"><span data-count="43">0</span> mapped</span></span>
+          </div>
+        </div>
+        <a class="float-card" href="ethos.html">
+          <div class="thumb"><img src="assets/img/moss-stones.jpg" alt="Rounded granite stones thick with moss and small ferns"></div>
+          <span class="kicker">Our Ethos</span>
+          <div class="card-foot">
+            <h3>Where the wild leads.</h3>
+            <span class="go-round" data-icon="arrow-down"></span>
+          </div>
+        </a>
+        <a class="float-card off" href="journal.html">
+          <div class="thumb"><img src="assets/img/after-rain.jpg" alt="Fog settling over mossy boulders after rain"></div>
+          <span class="kicker">Field Note 07</span>
+          <div class="card-foot">
+            <h3>After the Rain</h3>
+            <span class="go-round" data-icon="arrow-down"></span>
+          </div>
+        </a>
+      </aside>
+    </div>
+    <div class="scroll-cue"><span>Scroll</span><span class="line"></span></div>
+  </section>
+
+  <!-- 01 · The restoration journey -->
+  <section id="journey" class="chapter paper" data-theme="light">
+    <div class="wrap">
+      <div class="chapter-head">
+        <span class="chapter-label"><span class="dot"></span> The Restoration Journey</span>
+        <span class="chapter-index">01 / 04 ↓</span>
+      </div>
+      <div class="chapter-grid">
+        <div data-reveal>
+          <h2 class="section-title">The journey.</h2>
+          <p class="section-lede">From the first soil reading to the first new shoot, every visit begins with a closer look.</p>
+          <ol class="steps">
+            <li class="step done">
+              <span class="step-num">I</span>
+              <div><h3>Read the land</h3><p>Follow the water after a rain. Moss, exposed roots, and patches of bare soil show us where to begin.</p></div>
+              <span class="step-dot"></span>
+            </li>
+            <li class="step done">
+              <span class="step-num">II</span>
+              <div><h3>Plant in layers</h3><p>Ground cover, ferns, shrubs, and canopy natives go in together so the system holds moisture on its own.</p></div>
+              <span class="step-dot"></span>
+            </li>
+            <li class="step">
+              <span class="step-num">III</span>
+              <div><h3>Return each season</h3><p>We keep coming back to record growth, replace losses, and let the woody plants take over.</p></div>
+              <span class="step-dot"></span>
+            </li>
+          </ol>
+        </div>
+        <figure class="fig-visual" data-reveal data-delay="1">
+          <span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span>
+          <img src="assets/img/soil-clump.jpg" alt="Floating profile of forest soil with moss, two stones and one fern seedling">
+          <figcaption class="fig-caption"><span>Fig. 01</span><span>The forest floor</span></figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 · Our story -->
+  <section id="story" class="chapter dark">
+    <div class="chapter-media"><img src="assets/img/after-rain.jpg" alt="Mossy boulders and ferns in drifting mist"></div>
+    <canvas class="dust-canvas" aria-hidden="true"></canvas>
+    <div class="wrap">
+      <div class="chapter-head">
+        <span class="chapter-label"><span class="dot"></span> Our Story</span>
+        <span class="chapter-index">02 / 04 ↓</span>
+      </div>
+      <div class="chapter-grid">
+        <div data-reveal>
+          <span class="kicker" style="color: var(--moss-bright)">Field Note 07</span>
+          <h2 class="section-title" style="margin-top:14px">After the rain.</h2>
+          <p class="section-lede">We came back to the grove before the paths had dried. At the edge of the clearing, the smallest things had changed.</p>
+          <p style="margin-top:28px">
+            <a class="btn-pill" href="journal.html"><span data-icon="arrow-up-right"></span> Read the field note</a>
+          </p>
+        </div>
+        <div class="story-media" data-reveal data-delay="1">
+          <div class="thumb"><img src="assets/img/note-fiddlehead.jpg" alt="An unfurling fern fiddlehead on dark mossy wood"></div>
+          <div class="row">
+            <div class="track">
+              <div class="top"><span>01 — The clearing</span><span>07:42</span></div>
+              <div class="bar"><i></i></div>
+            </div>
+            <a class="play-ring" style="width:44px;height:44px" href="journal.html" aria-label="Listen to the field note"><span data-icon="play"></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 · Voices from the field -->
+  <section id="voices" class="chapter paper" data-theme="light">
+    <div class="wrap">
+      <div class="chapter-head">
+        <span class="chapter-label"><span class="dot"></span> Voices from the Field</span>
+        <span class="chapter-index">03 / 04 ↓</span>
+      </div>
+      <div class="chapter-grid">
+        <div data-quotes data-reveal>
+          <span class="quote-mark" aria-hidden="true">&ldquo;</span>
+          <blockquote class="quote-slide" data-slide>
+            <p class="quote-text">I used to walk straight through this clearing. Now I rarely leave before dark.</p>
+            <footer class="quote-by"><div class="name">A guided-walk participant</div><div class="role">Illustrative testimonial</div></footer>
+          </blockquote>
+          <blockquote class="quote-slide" data-slide hidden>
+            <p class="quote-text">The patch we left alone became the first place we looked each spring.</p>
+            <footer class="quote-by"><div class="name">A volunteer planter</div><div class="role">Illustrative testimonial</div></footer>
+          </blockquote>
+          <div class="quote-controls">
+            <button class="q-btn" data-q-prev aria-label="Previous quote" data-icon="arrow-left"></button>
+            <span class="q-index" data-q-index>01 — 02</span>
+            <button class="q-btn" data-q-next aria-label="Next quote" data-icon="arrow-right"></button>
+          </div>
+        </div>
+        <figure class="quote-fig" data-reveal data-delay="1">
+          <img src="assets/img/fern-frond.jpg" alt="Pressed fern frond on warm paper">
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 · Participation & pricing -->
+  <section id="pricing" class="chapter dark-green">
+    <div class="wrap">
+      <div class="chapter-head">
+        <span class="chapter-label"><span class="dot"></span> Participation &amp; Pricing</span>
+        <span class="chapter-index">04 / 04 ↓</span>
+      </div>
+      <div class="plans-head">
+        <h2 class="section-title" data-reveal>Ways to take part.</h2>
+        <p class="note" data-reveal data-delay="1">Read at your own pace, or look closer on foot.</p>
+      </div>
+      <div class="plans">
+        <article class="plan" data-reveal>
+          <div class="thumb"><img src="assets/img/path-reader.jpg" alt="A quiet mossy path between low ferns"></div>
+          <h3 class="plan-name">Field reader</h3>
+          <p class="plan-desc">For a quiet start at home.</p>
+          <div class="price"><span class="amt">$0</span><span class="per">/ always</span></div>
+          <ul class="plan-features">
+            <li>Digital pocket field guide</li>
+            <li>Three observation exercises</li>
+          </ul>
+          <a class="btn-pill plan-btn" href="journal.html"><span data-icon="arrow-up-right"></span> Open the field guide</a>
+        </article>
+        <article class="plan" data-reveal data-delay="1">
+          <div class="thumb"><img src="assets/img/visit-grove.jpg" alt="Misty grove trail between tall mossy conifers"></div>
+          <h3 class="plan-name">Guided visit</h3>
+          <p class="plan-desc">For a morning in the grove.</p>
+          <div class="price"><span class="amt">$45</span><span class="per">/ person</span></div>
+          <ul class="plan-features">
+            <li>Two-hour woodland walk</li>
+            <li>Small-group habitat study</li>
+          </ul>
+          <a class="btn-pill plan-btn" href="habitats.html"><span data-icon="arrow-up-right"></span> Plan a field visit</a>
+        </article>
+      </div>
+      <p class="pricing-foot">Illustrative pricing in USD</p>
+    </div>
+  </section>
+
+  <!-- Closing -->
+  <section class="closing">
+    <div class="chapter-media"><img src="assets/img/dark-fog.jpg" alt="Deep fog over a mossy branch in the old grove"></div>
+    <canvas class="dust-canvas" aria-hidden="true"></canvas>
+    <div class="closing-top">
+      <a class="back-pill" href="#grove"><span data-icon="arrow-up"></span> Back to the grove</a>
+      <nav class="pill-nav" aria-label="Chapters">
+        <a class="seg" href="#journey">Journey</a>
+        <a class="seg" href="#story">Story</a>
+        <a class="seg" href="#voices">Voices</a>
+        <a class="seg" href="#pricing">Pricing</a>
+      </nav>
+    </div>
+    <h2 class="closing-wordmark" data-reveal>Sylva</h2>
+    <div class="closing-meta">
+      <nav>
+        <a href="ethos.html">Ethos</a>
+        <a href="habitats.html">Habitats</a>
+        <a href="journal.html">Journal</a>
+        <a href="world.html">Living world</a>
+      </nav>
+      <span>© <span data-year></span> Sylva field study — original front-end build</span>
+    </div>
+  </section>
+
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+# Local scratch / analysis artifacts
+.tmp-tool-results/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+node_modules/
