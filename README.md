@@ -1,61 +1,61 @@
-# Sylva — Woodland Field Study Front End
+# Checkmate — Post-Quantum Zero-Trust Identity Killswitch (Front End)
 
-A static, Vercel-ready front end built around the Sylva "living green" woodland
-concept: mossy forest atmosphere, editorial type, pill navigation, floating
-field cards, scroll-driven chapters, and a dark procedural-scene entry point.
-
-The implementation is original code with generated nature imagery. Public
-reference pages were studied for layout, typography rhythm, spacing, and
-interaction patterns only; no third-party source code, 3D scenes, video clips,
-or marketing images were copied into this repository.
+Static, Vercel-ready front end for **Checkmate**: a server-side identity killswitch
+built around instant revocation and NIST ML-KEM-768 (Kyber768) post-quantum
+encapsulation. Content covers the ZeroRevoke threat model, engine contract, and
+the six dashboard modules. The visual language studies an editorial moss/paper
+reference for layout rhythm, spacing, and motion; all copy, code, and imagery here
+are original and no third-party source code or artwork is copied.
 
 ## Routes
 
 | File | Purpose |
 | --- | --- |
-| `index.html` | Main landing: grove hero, restoration journey, field-note story, voices, participation plans, closing wordmark |
-| `living-green.html` | Dark misty hero variant with floating ethos / field-note cards and stats |
-| `world.html` | Living-world scene entry with drifting dust particles and pointer parallax |
-| `sting.html` | Two-line motion-study statement ("It grows back.") |
-| `habitats.html` | Four habitat cards: moss carpet, creek line, old growth, clearing |
-| `journal.html` | Field-note index with dated observation rows |
-| `ethos.html` | Ethos statement and three working principles |
-| `404.html` | Fallback trail page |
+| `index.html` | Marketing field book: hero, threat model accordion, engine loop, security invariants, console module cards, footer wordmark, engine-contract reader modal |
+| `dashboard.html` | Operations console with the six interactive demonstration modules |
+| `404.html` | Fallback page |
+
+## Console modules (dashboard.html)
+
+1. Executive telemetry and KPI banner — active identities, revoked identities, protected assets, PQC engine status, 24 h authorization health.
+2. Emergency Killswitch and device-loss panel — actor select, loss reason, cluster revoke trigger, propagation readout, revocation registry.
+3. Live zero-trust access stream — timestamp, request ID, actor, asset, mode (`read` / `protected_read`), ALLOW / DENY badges, blocked-access callout.
+4. PQC cryptographic inspector — 1184-byte public key view, ML-KEM-768 encapsulation outputs (1088 B ciphertext, 32 B shared secret, nonce, HMAC-SHA-256 proof), harvest-now-decrypt-later meter.
+5. Asset ownership and access matrix — asset, owner, sensitivity tier, policy rule.
+6. Audit and compliance explorer — request ID lookup, decision / rule evidence, non-disclosure check, JSON and CSV export.
 
 ## Structure
 
 ```
 assets/
-  css/styles.css      design tokens and all components (single stylesheet)
-  js/main.js          nav, reveals, counters, particles, parallax, quote carousel
-  img/                generated nature photography (moss, ferns, forest, creek)
-  icons/favicon.svg   sprouting-mark favicon
-index.html … 404.html
+  css/site.css        marketing design tokens and components
+  css/console.css     dashboard panels, tables, badges, KPI cards
+  js/site.js          icons, nav, reveals, accordion, carousel, reader modal, particles
+  js/console.js       demonstration state, live stream, revoke flow, KEM demo, audit export
+  img/                original moss / forest photography used as atmosphere plates
+  icons/favicon.svg   chess-king mark
+index.html
+dashboard.html
 vercel.json           clean URLs, long cache for /assets
 ```
 
 ## Design system
 
-- **Palette**: moss `#6f9448`, bright moss `#8fbf5f`, fern `#496a33`, bark `#3a2f21`,
-  warm paper `#f0eee5`, dark forest `#131a0f`, fog `#9aa38a`. No blue or purple tones.
-- **Type**: Inter (display, tight tracking) + JetBrains Mono (uppercase labels, stats, indices).
-- **Components**: pill segmented nav, ghost pill buttons, circular play/arrow buttons,
-  warm-white floating cards, stat chips, chapter index labels, pricing cards, quote carousel.
-- **Breakpoints**: desktop 1440, laptop 1280, tablet 768, mobile 390; mobile menu collapses to a toggle.
+- Palette: warm paper `#f3f2e9`, night forest `#18221c` / `#202c22`, moss `#4a6a3a` / `#8fbf5f`, brick status `#b05545`. No blue or purple tones.
+- Type: Lexend (display, light weights, tight tracking) + JetBrains Mono (labels, indices, hex data).
+- Components: pill segmented nav, metal-rim pill controls, floating cream cards, chapter index labels, accordion threat rows, invariant carousel, module plan cards, giant footer wordmark, dark console panels with mono tables and status badges.
+- Responsive: desktop 1440, laptop 1280, tablet 768, mobile 390; console grids collapse and the nav becomes a toggle menu.
 
 ## Interactions
 
-- Mobile menu toggle and active-segment states
-- Scroll-triggered reveals (IntersectionObserver) with staggered delays
-- Count-up stats (canopy restored, native species)
-- Drifting pollen / dust particle canvas on dark scenes (reduced-motion aware)
-- Pointer parallax on hero backgrounds
-- Quote carousel with prev / next controls and index readout
-- Smooth anchor scrolling with fixed-header offset
+- Scroll reveals with staggered delays; drifting dust particles on dark bands (reduced-motion aware).
+- Threat-model accordion; invariant carousel; engine operation selector; engine-contract reader modal.
+- Live stream appending decisions; revoke mutates local state and animates propagation to `0.0 ms`; subsequent revoked-actor rows deny.
+- Encapsulation demo generates key material and an HMAC-SHA-256 proof via Web Crypto with a local fallback; audit lookup renders evidence rows; JSON / CSV export downloads a Blob.
 
 ## Run locally
 
-Any static server works:
+Any static server works; no build step:
 
 ```bash
 python3 -m http.server 8123
@@ -65,13 +65,9 @@ python3 -m http.server 8123
 ## Deploy to Vercel
 
 1. Push this repository to GitHub.
-2. Import the repository in Vercel; framework preset: **Other (Static)**; output directory: root.
-3. No build step required — plain HTML/CSS/JS with long-lived cached `/assets`.
+2. Import the repository in Vercel; framework preset: **Other (Static)**, output directory: root.
+3. `vercel.json` enables clean URLs and immutable caching for `/assets`.
 
-## Notes and limitations
+## Limitations
 
-- The reference's proprietary Three.js scene files, preview videos, and artwork are not included;
-  atmosphere is reproduced with layered photography, CSS gradients, and a lightweight canvas particle layer.
-- Testimonials and pricing labels are illustrative placeholders for layout review.
-- The ZeroRevoke backend modules (state engine, PQC handler, service CLI, audit contract) are a separate
-  backend phase and are intentionally not part of this front-end deliverable.
+- All console values are frozen sample data; no credentials are transmitted. The backend phases (state engine, `pqcrypto.kem.kyber768` handler, CLI operations `setup` / `read` / `revoke` / `protected_read` / `audit`, `threat-model.json`) are a separate implementation phase and are not exercised by this front end.

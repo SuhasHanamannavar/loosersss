@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>document.documentElement.className += " js";</script>
+  <title>Checkmate · Operations Console</title>
+  <meta name="description" content="Checkmate operations console: KPI telemetry, instant killswitch, live access stream, ML-KEM-768 inspector, access matrix, and audit explorer. Sample demonstration data.">
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;350;400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/console.css">
+</head>
+<body>
+
+<header class="topbar">
+  <a class="tb-brand" href="index.html">
+    <span class="mark" data-icon="king"></span>
+    <span>CHECKMATE</span>
+  </a>
+  <nav class="tb-nav" aria-label="Console sections">
+    <a href="index.html">Overview</a>
+    <a class="active" href="#kpis">Console</a>
+    <a href="#inspector">PQC inspector</a>
+    <a href="#matrix">Access matrix</a>
+    <a href="#audit">Audit</a>
+  </nav>
+  <span class="tb-status"><span class="dot"></span> ML-KEM-768 · Active · 0.8 ms</span>
+</header>
+
+<main class="wrap">
+  <div class="page-head">
+    <div>
+      <span class="mono-tag">Module set 01–06 · front-end demonstration</span>
+      <h1 style="margin-top:10px">Operations console.</h1>
+      <p class="sub">Server-side zero-trust verification board. Every decision shown here runs against frozen sample state; revoke actions mutate the local demonstration model only.</p>
+    </div>
+  </div>
+
+  <!-- Module 01 · Executive telemetry -->
+  <section class="kpis" id="kpis" aria-label="Executive telemetry">
+    <div class="kpi">
+      <div class="k-label"><span data-icon="shield"></span> Active identities</div>
+      <div class="k-value">1,284</div>
+      <div class="k-sub"><span class="k-delta">+12</span> provisioned · last 24 h</div>
+    </div>
+    <div class="kpi">
+      <div class="k-label"><span data-icon="lock"></span> Revoked identities</div>
+      <div class="k-value">37</div>
+      <div class="k-sub">locked in blocklist registry</div>
+    </div>
+    <div class="kpi">
+      <div class="k-label"><span data-icon="key"></span> Protected assets</div>
+      <div class="k-value">4,912</div>
+      <div class="k-sub">secrets, payloads, audit records</div>
+    </div>
+    <div class="kpi">
+      <div class="k-label"><span data-icon="chip"></span> PQC engine</div>
+      <div class="k-value" style="font-size:20px">ML-KEM-768</div>
+      <div class="k-sub">avg latency 0.8 ms · node cluster 6/6</div>
+    </div>
+    <div class="kpi">
+      <div class="k-label"><span data-icon="audit"></span> Authorization health · 24h</div>
+      <div class="k-value">96.2%</div>
+      <div class="health-bars"><span class="allow" style="width:96.2%"></span><span class="deny" style="width:3.8%"></span></div>
+      <div class="k-sub">allowed 96.2% · denied 3.8%</div>
+    </div>
+  </section>
+
+  <div class="board">
+
+    <!-- Module 02 · Emergency killswitch -->
+    <section class="panel span-7" id="killswitch" aria-label="Emergency killswitch">
+      <div class="panel-head">
+        <h2><span data-icon="bolt"></span> Emergency Killswitch &amp; Device Loss</h2>
+        <span class="panel-tag">Module 02 · instant revoke</span>
+      </div>
+      <div class="kill-grid">
+        <div>
+          <label class="field-label" for="actorSelect">Actor to revoke</label>
+          <div class="select-wrap">
+            <select id="actorSelect">
+              <option value="alice">alice · data-analyst · eu-west</option>
+              <option value="bhargav">bhargav · platform-engineer · us-east</option>
+              <option value="carlos">carlos · finance-clerk · eu-west</option>
+              <option value="dana">dana · security-ops · global</option>
+              <option value="eva">eva · product-manager · ap-south</option>
+            </select>
+          </div>
+
+          <span class="field-label" style="margin-top:16px">Loss reason</span>
+          <div class="reasons" role="radiogroup" aria-label="Loss reason">
+            <label class="reason"><input type="radio" name="reason" value="Stolen laptop" checked><span class="dot"></span> Stolen laptop</label>
+            <label class="reason"><input type="radio" name="reason" value="Suspected token leak"><span class="dot"></span> Suspected token leak</label>
+            <label class="reason"><input type="radio" name="reason" value="Compromised session"><span class="dot"></span> Compromised session</label>
+          </div>
+
+          <button class="revoke-btn" id="revokeBtn"><span data-icon="lock"></span> Revoke actor across cluster</button>
+
+          <div class="propagation">
+            <div>
+              <div class="p-label">Zero-window propagation</div>
+              <div class="p-value" id="propValue">0.0 ms</div>
+            </div>
+            <div class="p-note" id="propNote">state committed before the next request read</div>
+          </div>
+        </div>
+
+        <div>
+          <span class="field-label">Active revocation registry · blocklist</span>
+          <table class="tbl">
+            <colgroup><col style="width:30%"><col style="width:30%"><col style="width:26%"><col style="width:14%"></colgroup>
+            <thead><tr><th>Actor</th><th>Revoked at</th><th>Triggered by</th><th>Status</th></tr></thead>
+            <tbody id="registryRows">
+              <tr><td class="mono">fiona</td><td class="mono sub">11-26 08:14</td><td class="sub">Automated IDS</td><td><span class="badge lock">Locked</span></td></tr>
+              <tr><td class="mono">grace</td><td class="mono sub">11-25 21:40</td><td class="sub">Self-service wipe</td><td><span class="badge lock">Locked</span></td></tr>
+              <tr><td class="mono">hugo</td><td class="mono sub">11-25 11:03</td><td class="sub">Admin revoke</td><td><span class="badge lock">Locked</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Module 03 · Live access stream -->
+    <section class="panel span-5" id="stream" aria-label="Live zero-trust access stream">
+      <div class="panel-head">
+        <h2><span data-icon="server"></span> Live Zero-Trust Access Stream</h2>
+        <span class="live-line"><span class="dot"></span> streaming</span>
+      </div>
+      <div class="stream-scroll">
+        <table class="tbl">
+          <colgroup><col style="width:22%"><col style="width:20%"><col style="width:18%"><col style="width:16%"><col style="width:12%"><col style="width:12%"></colgroup>
+          <thead><tr><th>Time</th><th>Request</th><th>Actor</th><th>Asset</th><th>Mode</th><th>Decision</th></tr></thead>
+          <tbody id="streamRows"></tbody>
+        </table>
+        <p class="block-note" id="blockNote" hidden>BLOCKED: Stolen device access attempt · identity_disabled at verification</p>
+      </div>
+    </section>
+
+    <!-- Module 04 · PQC inspector -->
+    <section class="panel span-6" id="inspector" aria-label="Post-quantum cryptographic inspector">
+      <div class="panel-head">
+        <h2><span data-icon="chip"></span> PQC Cryptographic Inspector</h2>
+        <span class="panel-tag">Module 04 · ML-KEM-768</span>
+      </div>
+
+      <span class="field-label">Caller public key · 1184 bytes · Kyber768 raw encoding</span>
+      <div class="hexbox" id="pubKeyBox">—</div>
+
+      <div style="margin-top:14px; display:flex; gap:12px; flex-wrap:wrap; align-items:center">
+        <button class="btn-ghost" id="kemRun"><span data-icon="bolt"></span> Run encapsulation</button>
+        <span class="verify-line" id="verifyLine"><span data-icon="check"></span> awaiting challenge</span>
+      </div>
+
+      <div class="kem-out">
+        <div class="kem-cell"><div class="k">KEM ciphertext · 1088 B</div><div class="v muted" id="outCt">—</div></div>
+        <div class="kem-cell"><div class="k">Shared secret · 32 B</div><div class="v muted" id="outSs">—</div></div>
+        <div class="kem-cell"><div class="k">Replay nonce · 12 B</div><div class="v muted" id="outNonce">—</div></div>
+        <div class="kem-cell"><div class="k">HMAC-SHA-256 proof · 64 hex</div><div class="v muted" id="outProof">—</div></div>
+      </div>
+
+      <div class="hndl">
+        <h3>Harvest-now · decrypt-later resilience meter</h3>
+        <div class="hndl-row broken"><span class="alg">RSA-2048</span><span class="hndl-track"><i></i></span><span class="hndl-state">broken · Shor</span></div>
+        <div class="hndl-row broken"><span class="alg">ECDH P-256</span><span class="hndl-track"><i></i></span><span class="hndl-state">broken · Shor</span></div>
+        <div class="hndl-row secure"><span class="alg">ML-KEM-768</span><span class="hndl-track"><i></i></span><span class="hndl-state">resistant · FIPS 203</span></div>
+      </div>
+    </section>
+
+    <!-- Module 05 · Access matrix -->
+    <section class="panel span-6" id="matrix" aria-label="Asset ownership access matrix">
+      <div class="panel-head">
+        <h2><span data-icon="layers"></span> Asset Ownership &amp; Access Matrix</h2>
+        <span class="panel-tag">Module 05 · 1:1 owner policy</span>
+      </div>
+      <table class="tbl">
+        <colgroup><col style="width:26%"><col style="width:22%"><col style="width:22%"><col style="width:30%"></colgroup>
+        <thead><tr><th>Asset ID</th><th>Owner actor</th><th>Sensitivity</th><th>Policy rule</th></tr></thead>
+        <tbody id="matrixRows"></tbody>
+      </table>
+    </section>
+
+    <!-- Module 06 · Audit explorer -->
+    <section class="panel span-12" id="audit" aria-label="Audit and compliance explorer">
+      <div class="panel-head">
+        <h2><span data-icon="audit"></span> Audit &amp; Compliance Explorer</h2>
+        <span class="panel-tag">Module 06 · non-repudiation</span>
+      </div>
+      <div class="audit-layout">
+        <div>
+          <label class="field-label" for="auditQuery">Request ID lookup</label>
+          <div style="display:flex; gap:10px; flex-wrap:wrap">
+            <input class="text-input" id="auditQuery" placeholder="e.g. req-9f31c2" style="max-width:320px">
+            <button class="btn-ghost" id="auditSearch"><span data-icon="eye"></span> Lookup</button>
+          </div>
+          <p class="audit-hint">Sample IDs: req-9f31c2 · req-4b77e0 · req-c2a91d · req-77e0bf</p>
+          <div class="export-row">
+            <button class="btn-ghost" id="exportJson"><span data-icon="download"></span> Export JSON</button>
+            <button class="btn-ghost" id="exportCsv"><span data-icon="download"></span> Export CSV</button>
+          </div>
+          <p class="audit-hint">Export covers the demonstration audit log; denied records include a non-disclosure flag: no secret bytes returned.</p>
+        </div>
+        <div class="audit-result" id="auditResult">
+          <p class="audit-empty">Lookup a request ID to render timestamp, decision, enforced rule, and the non-disclosure guarantee.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="console-foot">
+    <span>Checkmate console · demonstration data · operations: setup / read / revoke / protected_read / audit</span>
+    <span>ML-KEM-768 · NIST FIPS 203 · SOC 2 / ISO 27001 evidence-ready</span>
+  </footer>
+</main>
+
+<script src="assets/js/console.js"></script>
+</body>
+</html>
