@@ -97,7 +97,7 @@
             <span class="panel-tag">serverless · Vercel</span>
           </div>
           <div class="fact-grid" style="grid-template-columns:1fr">
-            <div class="fact"><div class="k">Sync endpoint</div><div class="v">checkmate-guard.vercel.app/api/sync</div></div>
+            <div class="fact"><div class="k">Sync endpoint</div><div class="v">checkmateee.vercel.app/api/sync</div></div>
             <div class="fact"><div class="k">Measured verify</div><div class="v">3.8 ms · budget &lt; 2000 ms</div></div>
             <div class="fact"><div class="k">Tenant</div><div class="v">not connected</div></div>
             <div class="fact"><div class="k">Isolated tenant</div><div class="v">provisioned per workspace · separate keys + roster</div></div>
@@ -129,7 +129,7 @@
                 <pre id="pyCode"><span class="c"># silica_guard.py — boot-time identity guard</span>
 <span class="p">from</span> silica_guard import Guard
 
-guard = Guard(endpoint=<span class="s">"https://checkmate-guard.vercel.app/api/sync"</span>)
+guard = Guard(endpoint=<span class="s">"https://checkmateee.vercel.app/api/sync"</span>)
 
 <span class="p">@app.before_request</span>
 <span class="p">def</span> verify_identity():
@@ -148,7 +148,7 @@ guard = Guard(endpoint=<span class="s">"https://checkmate-guard.vercel.app/api/s
 <span class="p">const</span> { Guard } = require(<span class="s">"./checkmate-guard"</span>);
 
 <span class="p">const</span> guard = <span class="p">new</span> Guard({
-  endpoint: <span class="s">"https://checkmate-guard.vercel.app/api/sync"</span>
+  endpoint: <span class="s">"https://checkmateee.vercel.app/api/sync"</span>
 });
 
 app.use(<span class="p">async</span> (req, res, next) => {
@@ -312,6 +312,6 @@ $ python track4_service.py --op audit</pre>
 </div>
 
 <div class="toast" role="status"></div>
-<script src="assets/js/checkmate.js?v=2.6.0"></script>
+<script src="assets/js/checkmate.js?v=2.7.0"></script>
 </body>
 </html>

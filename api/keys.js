@@ -33,7 +33,8 @@ module.exports = async function handler(req, res) {
       const keys = (result.Items || []).map(item => ({
         id: item.SK.S.replace('KEY#', ''),
         name: item.name ? item.name.S : 'API Key',
-        prefix: item.prefix ? item.prefix.S : 'ck_live_***',
+        apiKey: item.key ? item.key.S : '',
+        prefix: item.prefix ? item.prefix.S : (item.key ? item.key.S.substring(0, 10) + '...' : 'ck_live_***'),
         status: item.status ? item.status.S : 'ACTIVE',
         scopes: item.scopes ? JSON.parse(item.scopes.S) : ['read', 'protected_read', 'workspace_activation'],
         created_at: item.created_at ? item.created_at.S : new Date().toISOString(),

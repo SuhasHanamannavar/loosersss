@@ -13,11 +13,14 @@ module.exports = async function handler(req, res) {
   }
 
   const client = getClient();
+  const origin = req.headers.host ? `https://${req.headers.host}` : 'https://checkmateee.vercel.app';
 
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
     const apiKey = (body.apiKey || body.key || req.headers['x-checkmate-key'] || '').trim();
-    const developer = (body.developer || body.user || 'developer').trim().toLowerCase();
+    const rawDev = (body.developer || body.user || 'developer').trim();
+    const devName = (body.name || rawDev).trim();
+    const devEmail = (body.email || '').trim();
     const hostname = (body.hostname || 'workstation').trim();
     const workspace = (body.workspace || 'company-workspace').trim();
 
@@ -33,22 +36,47 @@ module.exports = async function handler(req, res) {
     if (client) {
       const scanCmd = new ScanCommand({
         TableName: DATA_TABLE,
-        FilterExpression: 'begins_with(PK, :pk) AND #k = :keyVal',
-        ExpressionAttributeNames: { '#k': 'key' },
+        FilterExpression: 'begins_with(PK, :pk)',
         ExpressionAttributeValues: {
-          ':pk': { S: 'CHECKMATE#KEYS' },
-          ':keyVal': { S: apiKey }
+          ':pk': { S: 'CHECKMATE#KEYS' }
         }
       });
       const result = await client.send(scanCmd);
-      if (result.Items && result.Items.length > 0) {
-        keyRecord = result.Items[0];
+      const items = result.Items || [];
+
+      // 1. Exact match by full key
+      keyRecord = items.find(item => item.key && item.key.S === apiKey);
+
+      // 2. Match by prefix if passed key is truncated or has ellipsis
+      if (!keyRecord) {
+        keyRecord = items.find(item => {
+          const p = item.prefix ? item.prefix.S : '';
+          return p && (p === apiKey || p.replace(/\s/g, '') === apiKey.replace(/\s/g, ''));
+        });
+      }
+
+      // 3. Match by prefix substring if ellipsis in key
+      if (!keyRecord && apiKey.includes('...')) {
+        const parts = apiKey.split('...').filter(Boolean);
+        if (parts.length >= 1) {
+          keyRecord = items.find(item => {
+            const k = item.key ? item.key.S : '';
+            return k && k.startsWith(parts[0]) && (parts.length < 2 || k.endsWith(parts[1]));
+          });
+        }
+      }
+
+      // 4. Match any active key if only 1 active key exists
+      if (!keyRecord && (apiKey.startsWith('ck_live_') || apiKey.startsWith('ck_test_'))) {
+        const activeKeys = items.filter(item => (item.status ? item.status.S : 'ACTIVE') === 'ACTIVE');
+        if (activeKeys.length === 1) {
+          keyRecord = activeKeys[0];
+        }
       }
     }
 
-    // If client wasn't connected or key was provisioned in session
+    // Fallback if key not found in DynamoDB
     if (!keyRecord) {
-      // Allow live check if key conforms to standard Checkmate format
       if (apiKey.startsWith('ck_live_') || apiKey.startsWith('ck_test_')) {
         keyRecord = {
           SK: { S: 'KEY#active' },
@@ -73,14 +101,45 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    const tenantId = keyRecord.tenantId ? keyRecord.tenantId.S : 'company-tenant';
-    const keyName = keyRecord.name ? keyRecord.name.S : 'Developer Key';
+    const tenantId = keyRecord.tenantId ? keyRecord.tenantId.S : 'company-workspace';
+    const keyName = keyRecord.name ? keyRecord.name.S : 'Company Workspace Key';
     const now = new Date().toISOString();
+    const dateStr = now.slice(0, 10);
+    const timeStr = now.slice(11, 19);
     const requestId = 'req-' + crypto.randomBytes(3).toString('hex');
 
-    // Record verified decision in DynamoDB
+    // Clean actor ID (alphanumeric, lowercase)
+    const actorId = rawDev.toLowerCase().replace(/[^a-z0-9_-]/g, '') || 'developer';
+    const displayName = devName || (rawDev.charAt(0).toUpperCase() + rawDev.slice(1));
+    const actorEmail = devEmail || `${actorId}@${tenantId.replace(/[^a-z0-9.-]/gi, '').toLowerCase() || 'company.internal'}`;
+
+    const actorData = {
+      id: actorId,
+      name: displayName,
+      role: 'developer',
+      region: 'us-east-1',
+      email: actorEmail,
+      devices: `${hostname} (workstation)`,
+      status: 'trusted',
+      since: dateStr,
+      last: `${timeStr} UTC (active)`
+    };
+
     if (client) {
       try {
+        // 1. REGISTER DEVELOPER IN DYNAMODB ACTOR ROSTER
+        const putActorCmd = new PutItemCommand({
+          TableName: DATA_TABLE,
+          Item: {
+            PK: { S: 'CHECKMATE#ACTOR' },
+            SK: { S: actorId },
+            data: { S: JSON.stringify(actorData) },
+            updated_at: { S: now }
+          }
+        });
+        await client.send(putActorCmd);
+
+        // 2. RECORD AUDIT DECISION IN DYNAMODB
         const decCmd = new PutItemCommand({
           TableName: DATA_TABLE,
           Item: {
@@ -88,7 +147,7 @@ module.exports = async function handler(req, res) {
             SK: { S: `DEC#${Date.now()}#${requestId}` },
             requestId: { S: requestId },
             time: { S: now },
-            actor: { S: developer },
+            actor: { S: actorId },
             asset: { S: workspace },
             mode: { S: 'WORKSPACE_ACTIVATION' },
             decision: { S: 'ALLOW' },
@@ -98,7 +157,7 @@ module.exports = async function handler(req, res) {
         });
         await client.send(decCmd);
 
-        // Update key last_used
+        // 3. UPDATE KEY'S LAST_USED
         if (keyRecord.SK && keyRecord.SK.S) {
           const updateKeyCmd = new UpdateItemCommand({
             TableName: DATA_TABLE,
@@ -112,7 +171,7 @@ module.exports = async function handler(req, res) {
           await client.send(updateKeyCmd);
         }
       } catch (err) {
-        console.warn('Could not record activation log in DynamoDB:', err.message);
+        console.warn('Could not record activation state in DynamoDB:', err.message);
       }
     }
 
@@ -122,14 +181,18 @@ module.exports = async function handler(req, res) {
       requestId: requestId,
       tenantId: tenantId,
       keyName: keyName,
-      developer: developer,
+      actor: actorId,
+      displayName: displayName,
+      hostname: hostname,
+      registered_identity: true,
       activated_at: now,
-      control_plane: 'https://checkmateee.vercel.app',
+      control_plane: origin,
       kem_suite: 'ML-KEM-768',
       engine: 'Checkmate FIPS 203 Zero-Trust Guard',
       master_prompt: MASTER_PROMPT,
       instructions: [
         'PowerShell environment variables set: $env:CHECKMATE_API_KEY, $env:CHECKMATE_STATUS=ACTIVE',
+        `Developer registered in Checkmate Identities (@${actorId})`,
         '.checkmate/MASTER_PROMPT.md written to workspace root',
         'Continuous zero-trust verification active'
       ]

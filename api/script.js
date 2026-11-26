@@ -9,7 +9,7 @@ module.exports = function handler(req, res) {
       content = content.slice(1);
     }
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.status(200).send(content);
   } catch (err) {
     res.status(500).send('# Failed to load Checkmate activator script: ' + err.message);

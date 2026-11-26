@@ -1,4 +1,4 @@
-# ============================================================
+﻿# ============================================================
 #  CHECKMATE · ZERO-TRUST WORKSPACE AUTO-ACTIVATOR
 # ============================================================
 
@@ -25,11 +25,23 @@ if (-not $Developer) { $Developer = "developer" }
 $HostName = if ($env:COMPUTERNAME) { $env:COMPUTERNAME } else { "workstation" }
 $WorkspacePath = (Get-Location).Path
 
+# Collect developer display name & email from git config if available
+$DevName = $Developer
+$DevEmail = ""
+try {
+  $GitName = (git config user.name 2>$null)
+  if ($GitName -and -not [string]::IsNullOrWhiteSpace($GitName)) { $DevName = $GitName.Trim() }
+  $GitEmail = (git config user.email 2>$null)
+  if ($GitEmail -and -not [string]::IsNullOrWhiteSpace($GitEmail)) { $DevEmail = $GitEmail.Trim() }
+} catch {}
+
 Write-Host "Verifying key with Checkmate Control Plane ($ControlPlane)..." -ForegroundColor Gray
 
 $Payload = @{
   apiKey = $ApiKey
   developer = $Developer
+  name = $DevName
+  email = $DevEmail
   hostname = $HostName
   workspace = [System.IO.Path]::GetFileName($WorkspacePath)
 } | ConvertTo-Json
@@ -68,7 +80,10 @@ $Config = @{
   apiKeyPrefix = if ($ApiKey.Length -gt 12) { $ApiKey.Substring(0, 10) + "..." } else { $ApiKey }
   tenantId = $Response.tenantId
   keyName = $Response.keyName
-  developer = $Developer
+  developer = $Response.actor
+  displayName = $Response.displayName
+  hostname = $HostName
+  registeredIdentity = $true
   activatedAt = $Response.activated_at
   requestId = $Response.requestId
   controlPlane = $ControlPlane
@@ -91,6 +106,8 @@ if (-not (Test-Path $CursorRulesPath)) {
 
 Write-Host ""
 Write-Host "  STATUS:         ACTIVE (Verified in AWS DynamoDB)" -ForegroundColor Green
+Write-Host "  IDENTITY:       @$($Response.actor) ($HostName)" -ForegroundColor Green
+Write-Host "  ROSTER:         Registered in Checkmate Console -> Identities" -ForegroundColor Green
 Write-Host "  TENANT:         $($Response.tenantId)" -ForegroundColor White
 Write-Host "  KEY NAME:       $($Response.keyName)" -ForegroundColor White
 Write-Host "  KEM SUITE:      $($Response.kem_suite) (FIPS 203)" -ForegroundColor White

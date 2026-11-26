@@ -345,6 +345,7 @@
 
   function renderIdentities(filter) {
     if (!identityBody) return;
+    var idFoot = document.getElementById("identityFoot");
     filter = (filter || "all").toLowerCase();
     var rows = ACTORS.filter(function (a) {
       var locked = !!disabled[a.id];
@@ -355,8 +356,13 @@
 
     if (!rows.length) {
       identityBody.innerHTML = emptyRow(7, "users", "No identities yet", "Provisioned actors appear here after the control plane connects.");
+      if (idFoot) idFoot.textContent = "No identities yet · actors appear after the control plane connects";
       renderIcons(identityBody);
       return;
+    }
+
+    if (idFoot) {
+      idFoot.textContent = rows.length + " " + (rows.length === 1 ? "identity" : "identities") + " registered · control plane connected";
     }
 
     identityBody.innerHTML = rows.map(function (a) {
@@ -366,7 +372,7 @@
         : '<span class="badge allow">Trusted</span>';
       var last = locked
         ? '<span class="sub mono">revoked · no session</span>'
-        : '<span class="mono sub">' + (a.last || "now") + "</span>";
+        : '<span class="mono sub">' + (a.last || "awaiting activation") + "</span>";
       var actions = '<button class="row-btn" data-detail="' + a.id + '">Profile</button>' +
         (locked ? "" : '<button class="row-btn danger" data-revoke="' + a.id + '">Revoke</button>');
       return '<tr data-status="' + (locked ? "locked" : "trusted") + '" data-search="' + (a.name + " " + a.id + " " + a.role + " " + a.region).toLowerCase() + '">' +
@@ -374,7 +380,7 @@
         '<span class="meta"><span class="name">' + a.name + '</span><span class="handle">@' + a.id + "</span></span></div></td>" +
         '<td class="mono" style="font-size:12px">' + a.role + "</td>" +
         '<td class="mono sub">' + a.region + "</td>" +
-        "<td>" + (a.devices || "1 device") + "</td>" +
+        "<td>" + (a.devices || "awaiting device activation") + "</td>" +
         "<td>" + last + "</td>" +
         "<td>" + status + "</td>" +
         '<td><div class="row-actions">' + actions + "</div></td></tr>";
@@ -410,8 +416,8 @@
       '<div class="fact"><div class="k">Handle</div><div class="v">@' + a.id + "</div></div>" +
       '<div class="fact"><div class="k">Role</div><div class="v">' + a.role + "</div></div>" +
       '<div class="fact"><div class="k">Region</div><div class="v">' + a.region + "</div></div>" +
-      '<div class="fact"><div class="k">Email</div><div class="v">' + (a.email || (a.id + "@checkmate.local")) + "</div></div>" +
-      '<div class="fact"><div class="k">Devices registered</div><div class="v">' + (a.devices || "1 device") + "</div></div>" +
+      '<div class="fact"><div class="k">Email</div><div class="v">' + (a.email || (a.id + "@company.internal")) + "</div></div>" +
+      '<div class="fact"><div class="k">Devices registered</div><div class="v">' + (a.devices || "awaiting device activation") + "</div></div>" +
       '<div class="fact"><div class="k">Provisioned</div><div class="v">' + (a.since || stamp()) + "</div></div>" +
       "</div>" +
       '<div style="margin-top:16px"><span class="field-label">Protected assets held</span><table class="tbl"><tbody>' +
@@ -466,6 +472,7 @@
       var nameEl = document.getElementById("provName");
       var roleEl = document.getElementById("provRole");
       var regEl = document.getElementById("provRegion");
+      var emailEl = document.getElementById("provEmail");
 
       var name = (nameEl ? nameEl.value : "").trim();
       if (!name) {
@@ -474,23 +481,27 @@
       }
       var role = roleEl ? roleEl.value : "developer";
       var region = regEl ? regEl.value : "us-east";
+      var email = (emailEl ? emailEl.value : "").trim();
       var id = name.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
       if (!id) id = "user-" + Math.random().toString(36).slice(2, 6);
+      if (!email) email = id + "@company.internal";
 
       var newActor = {
         id: id,
         name: name,
         role: role,
         region: region,
-        email: id + "@checkmate.local",
-        devices: "1 laptop",
-        since: stamp(),
-        last: "just now"
+        email: email,
+        devices: "awaiting device activation",
+        status: "trusted",
+        since: new Date().toISOString().slice(0, 10),
+        last: "awaiting activation"
       };
 
       ACTORS.push(newActor);
       closeModal(document.getElementById("provisionModal-backdrop"), document.getElementById("provisionModal"));
       if (nameEl) nameEl.value = "";
+      if (emailEl) emailEl.value = "";
 
       renderIdentities();
       refreshWizardSelect();
@@ -827,7 +838,11 @@
     keyBody.innerHTML = KEYS.map(function (k, i) {
       var isActive = (k.status || "ACTIVE") === "ACTIVE";
       var statusBadge = isActive ? '<span class="badge badge-trusted">ACTIVE</span>' : '<span class="badge badge-locked">REVOKED</span>';
-      var psCmd = '$env:CHECKMATE_API_KEY="' + (k.prefix || "ck_live_...") + '"; irm https://checkmateee.vercel.app/api/activate.ps1 | iex';
+      var actualKey = k.apiKey || k.key || k.prefix;
+      var psCmd = '$env:CHECKMATE_API_KEY="' + actualKey + '"; irm https://checkmateee.vercel.app/api/activate.ps1 | iex';
+      var copyKeyBtn = (k.apiKey || k.key)
+        ? '<button class="row-btn" data-key-copy-secret="' + encodeURIComponent(k.apiKey || k.key) + '"><span data-icon="copy"></span> Copy Key</button>'
+        : '';
       return "<tr>" +
         '<td><div class="cell-main"><span class="avatar tiny" style="background:var(--fill);color:var(--ink)"><span data-icon="key"></span></span>' +
         '<span class="meta"><span class="name">' + k.name + '</span><span class="handle">' + (k.prefix || "ck_live_***") + "</span></span></div></td>" +
@@ -835,10 +850,20 @@
         '<td class="mono sub">' + (k.created_at ? k.created_at.substring(0, 10) : (k.created || stamp())) + "</td>" +
         '<td class="mono sub">' + (k.last_used || k.last || "never") + "</td>" +
         '<td><div class="row-actions">' +
+        (isActive ? copyKeyBtn : '') +
         (isActive ? '<button class="row-btn" data-key-copy-ps="' + encodeURIComponent(psCmd) + '"><span data-icon="terminal"></span> Copy PS</button>' : '') +
         (isActive ? '<button class="row-btn danger" data-key-revoke-id="' + (k.id || i) + '">Revoke</button>' : '<span class="mono sub" style="font-size:11px">revoked</span>') +
         '</div></td></tr>';
     }).join("");
+
+    keyBody.querySelectorAll("[data-key-copy-secret]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var sec = decodeURIComponent(b.getAttribute("data-key-copy-secret"));
+        navigator.clipboard.writeText(sec).then(function () {
+          toast("Full API key copied to clipboard");
+        });
+      });
+    });
 
     keyBody.querySelectorAll("[data-key-copy-ps]").forEach(function (b) {
       b.addEventListener("click", function () {
