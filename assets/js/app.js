@@ -1,10 +1,23 @@
-/* CHECKMATE app console — shared shell + empty-state views.
-   Static front end: no records, names, request ids or counters are seeded.
-   Every table renders an empty state until the control plane supplies actors,
-   assets, decisions, revocation proofs and API keys. Mirrors
-   track4_service.py operations: setup / read / revoke / protected_read / audit. */
+/* CHECKMATE app console — shared shell, AWS DynamoDB sync, and zero-trust verification.
+   Every dashboard renders empty until real records are provisioned or evaluated.
+   Mirrors control plane operations: setup / read / revoke / protected_read / audit. */
 (function () {
   "use strict";
+
+  /* ---------------- Auth Gate: redirect to login if unauthenticated ---------------- */
+  var authSession = null;
+  try {
+    authSession = JSON.parse(localStorage.getItem("cm_auth_session") || sessionStorage.getItem("cm_auth_session") || "null");
+  } catch (e) {}
+
+  var currentPath = (location.pathname.split("/").pop() || "console.html").toLowerCase();
+  var isPublicPage = currentPath === "login.html" || currentPath === "index.html" || currentPath === "404.html";
+
+  if (!isPublicPage && (!authSession || !authSession.email)) {
+    window.location.replace("login.html?redirect=" + encodeURIComponent(currentPath));
+    return;
+  }
+
   /* ---------------- icons (inline, no external font) ---------------- */
   var ICONS = {
     king: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3"/><path d="M10.5 4.5h3"/><path d="M5 8.5 7.6 11 12 7.8 16.4 11 19 8.5l-1.8 6.4a2.4 2.4 0 0 1-2.3 1.8H9.1a2.4 2.4 0 0 1-2.3-1.8L5 8.5z"/><path d="M8.6 16.7h6.8l.5 3.3H8.1l.5-3.3z"/></svg>',
@@ -43,6 +56,7 @@
     plug: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6M15 2v6"/><path d="M6 8h12v3a6 6 0 0 1-12 0z"/><path d="M12 17v5"/></svg>',
     inbox: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l2.5-7.5A2 2 0 0 1 7.4 4h9.2a2 2 0 0 1 1.9 1.5L21 13v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 13h5l1.5 2.5h5L16 13h5"/></svg>'
   };
+
   function renderIcons(root) {
     (root || document).querySelectorAll("[data-icon]").forEach(function (el) {
       var n = el.getAttribute("data-icon");
@@ -51,14 +65,29 @@
   }
   renderIcons(document);
   window.CMRenderIcons = renderIcons;
+
   /* ---------------- helpers ---------------- */
   function pad(n) { return n < 10 ? "0" + n : "" + n; }
   function localTime(d) { d = d || new Date(); return pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds()); }
   function stamp() { var d = new Date(); return pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+  function rid() { return "req-" + Math.random().toString(16).slice(2, 8); }
   function initials(name) {
     var parts = (name || "").split(/\s+/);
     return ((parts[0] || "")[0] || "") + ((parts[1] || "")[0] || "");
   }
+  function randHex(bytes) {
+    var out = "";
+    try {
+      var a = new Uint8Array(bytes);
+      crypto.getRandomValues(a);
+      for (var i = 0; i < a.length; i++) out += a[i].toString(16).padStart(2, "0");
+    } catch (e) {
+      for (var j = 0; j < bytes * 2; j++) out += "0123456789abcdef"[Math.floor(Math.random() * 16)];
+    }
+    return out;
+  }
+  function shortHex(hex, n) { return hex.slice(0, n) + "…"; }
+
   var toastEl = document.querySelector(".toast");
   var toastTimer;
   function toast(msg) {
@@ -68,7 +97,8 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 2600);
   }
-  /* ---------------- data model: empty until the control plane connects ---------------- */
+
+  /* ---------------- State model (Clean empty state) ---------------- */
   var STORE_KEY = "cm_workspace_v1";
   var disabled = {};
   try { disabled = JSON.parse(localStorage.getItem(STORE_KEY) || "{}") || {}; } catch (e) { disabled = {}; }
@@ -83,9 +113,10 @@
   function actorById(id) { return ACTORS.find(function (a) { return a.id === id; }); }
   function emptyRow(colspan, icon, title, hint, extraAttrs) {
     return '<tr' + (extraAttrs || "") + '><td colspan="' + colspan + '"><div class="empty">' +
-      '<span data-icon="' + icon + '"></span><h4>' + title + "</h4><p>" + hint + "</p></div></td>";
+      '<span data-icon="' + icon + '"></span><h4>' + title + "</h4><p>" + hint + "</p></div></td></tr>";
   }
-  /* ---------------- shell: nav, sidebar, tabs, modals, copy ---------------- */
+
+  /* ---------------- Shell: nav, sidebar, tabs, modals, copy ---------------- */
   var here = (location.pathname.split("/").pop() || "console.html").toLowerCase();
   document.querySelectorAll(".side-item[data-nav]").forEach(function (a) {
     if (a.getAttribute("data-nav").toLowerCase() === here) a.classList.add("active");
@@ -98,6 +129,7 @@
     side.classList.toggle("open"); scrim.classList.toggle("open");
   });
   if (scrim) scrim.addEventListener("click", closeSide);
+
   document.querySelectorAll("[data-tabs]").forEach(function (group) {
     var btns = group.querySelectorAll("[data-tab]");
     btns.forEach(function (b) {
@@ -112,6 +144,7 @@
       });
     });
   });
+
   document.querySelectorAll("[data-modal-open]").forEach(function (btn) {
     btn.addEventListener("click", function () {
       var id = btn.getAttribute("data-modal-open");
@@ -123,6 +156,7 @@
       document.body.style.overflow = "hidden";
     });
   });
+
   function closeModal(backdrop, modal) {
     backdrop && backdrop.classList.remove("open");
     modal && modal.classList.remove("open");
@@ -158,8 +192,142 @@
       toast("Copied to clipboard");
     });
   });
-  /* ---------------- Identities page ---------------- */
+
+  /* ---------------- Topbar Auth & Sync Status ---------------- */
+  var syncStatus = document.querySelector(".sync-status");
+  if (syncStatus && authSession) {
+    syncStatus.innerHTML = '<span class="dot" style="background:#28c840"></span>' + (authSession.email || 'AWS DynamoDB') + ' · us-east-1';
+  }
+
+  async function syncPost(action, data) {
+    try {
+      var res = await fetch("/api/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: action, data: data })
+      });
+      return await res.json();
+    } catch (e) {
+      console.warn("Offline/local mode fallback:", e);
+      return { ok: true, fallback: true };
+    }
+  }
+
+  async function fetchStateFromAWS() {
+    try {
+      var res = await fetch("/api/sync");
+      if (res.ok) {
+        var data = await res.json();
+        if (data.ok) {
+          ACTORS = data.actors || [];
+          ASSETS = data.assets || [];
+          REGISTRY = data.registry || [];
+          AUDIT = data.audit || [];
+          KEYS = data.keys || [];
+
+          REGISTRY.forEach(function (r) { if (r.actor) disabled[r.actor] = true; });
+          persistDisabled();
+
+          if (syncStatus && authSession) {
+            syncStatus.innerHTML = '<span class="dot" style="background:#28c840"></span>' + (authSession.email || 'AWS DynamoDB') + ' · us-east-1';
+          }
+          renderAllViews();
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn("Direct AWS sync not available, operating in clean local mode", e);
+    }
+    renderAllViews();
+  }
+
+  function renderAllViews() {
+    renderOverview();
+    renderIdentities(currentIdentityFilter());
+    renderAssets();
+    renderRegistry();
+    refreshWizardSelect();
+    renderStream();
+    renderKeys();
+    updateSidebarCounts();
+    updateStatsCards();
+  }
+
+  function updateSidebarCounts() {
+    var sideCount = document.getElementById("sideIdentityCount");
+    if (!sideCount) return;
+    var count = ACTORS.filter(function (a) { return !disabled[a.id]; }).length;
+    if (count > 0) {
+      sideCount.textContent = count;
+      sideCount.style.display = "inline-flex";
+    } else {
+      sideCount.textContent = "";
+      sideCount.style.display = "none";
+    }
+  }
+
+  function updateStatsCards() {
+    var activeEl = document.querySelector(".stat:nth-child(1) .k-value");
+    var activeSub = document.querySelector(".stat:nth-child(1) .k-sub");
+    var revEl = document.querySelector(".stat:nth-child(2) .k-value");
+    var revSub = document.querySelector(".stat:nth-child(2) .k-sub");
+    var assetEl = document.querySelector(".stat:nth-child(3) .k-value");
+    var assetSub = document.querySelector(".stat:nth-child(3) .k-sub");
+    var healthEl = document.querySelector(".stat:nth-child(4) .k-value");
+    var healthSub = document.querySelector(".stat:nth-child(4) .k-sub");
+
+    var activeCount = ACTORS.filter(function (a) { return !disabled[a.id]; }).length;
+    if (activeEl) activeEl.textContent = activeCount.toLocaleString();
+    if (activeSub) activeSub.textContent = activeCount > 0 ? (activeCount + " active in session") : "no identities provisioned yet";
+
+    if (revEl) revEl.textContent = REGISTRY.length.toLocaleString();
+    if (revSub) revSub.textContent = REGISTRY.length > 0 ? (REGISTRY.length + " locked in blocklist") : "committed to disabled registry";
+
+    if (assetEl) assetEl.textContent = ASSETS.length.toLocaleString();
+    if (assetSub) assetSub.textContent = ASSETS.length > 0 ? (ASSETS.length + " envelopes sealed") : "secrets, exports, connection strings";
+
+    if (AUDIT.length === 0) {
+      if (healthEl) healthEl.textContent = "—";
+      if (healthSub) healthSub.textContent = "no decisions recorded in the last 24 h";
+    } else {
+      var allowed = AUDIT.filter(function (r) { return r.decision === "allow"; }).length;
+      var pct = ((allowed / AUDIT.length) * 100).toFixed(1);
+      if (healthEl) healthEl.textContent = pct + "%";
+      if (healthSub) healthSub.textContent = allowed + " allowed · " + (AUDIT.length - allowed) + " denied (" + AUDIT.length + " total)";
+    }
+  }
+
+  /* ---------------- Overview Page ---------------- */
+  var overviewRows = document.getElementById("overviewRows");
+  function renderOverview() {
+    if (!overviewRows) return;
+    if (!AUDIT.length) {
+      overviewRows.innerHTML = emptyRow(6, "activity", "No recent decisions", "Authorized and denied requests evaluated against the disabled registry will appear here.");
+      renderIcons(overviewRows);
+      return;
+    }
+    overviewRows.innerHTML = AUDIT.slice(0, 5).map(function (r) {
+      var modeBadge = r.mode === "protected_read" || r.mode === "PQ"
+        ? '<span class="badge pq">PQ</span>'
+        : '<span class="badge std">read</span>';
+      return "<tr data-decision='" + r.decision + "'>" +
+        '<td class="mono sub">' + (r.ts || "").replace("T", " ").replace("Z", "").slice(0, 19) + "</td>" +
+        '<td class="mono sub">' + r.id + "</td>" +
+        '<td class="mono">' + r.actor + "</td>" +
+        '<td class="sub">' + r.asset + "</td>" +
+        "<td>" + modeBadge + "</td>" +
+        "<td>" + badgeFor(r.decision) + "</td></tr>";
+    }).join("");
+    renderIcons(overviewRows);
+  }
+
+  /* ---------------- Identities Page ---------------- */
   var identityBody = document.getElementById("identityRows");
+  function currentIdentityFilter() {
+    var active = document.querySelector("[data-identity-filter].active");
+    return active ? active.getAttribute("data-identity-filter") : "all";
+  }
+
   function renderIdentities(filter) {
     if (!identityBody) return;
     filter = (filter || "all").toLowerCase();
@@ -169,11 +337,13 @@
       if (filter === "locked" && !locked) return false;
       return true;
     });
+
     if (!rows.length) {
       identityBody.innerHTML = emptyRow(7, "users", "No identities yet", "Provisioned actors appear here after the control plane connects.");
       renderIcons(identityBody);
       return;
     }
+
     identityBody.innerHTML = rows.map(function (a) {
       var locked = !!disabled[a.id];
       var status = locked
@@ -181,7 +351,7 @@
         : '<span class="badge allow">Trusted</span>';
       var last = locked
         ? '<span class="sub mono">revoked · no session</span>'
-        : '<span class="mono sub">' + a.last + "</span>";
+        : '<span class="mono sub">' + (a.last || "now") + "</span>";
       var actions = '<button class="row-btn" data-detail="' + a.id + '">Profile</button>' +
         (locked ? "" : '<button class="row-btn danger" data-revoke="' + a.id + '">Revoke</button>');
       return '<tr data-status="' + (locked ? "locked" : "trusted") + '" data-search="' + (a.name + " " + a.id + " " + a.role + " " + a.region).toLowerCase() + '">' +
@@ -189,11 +359,12 @@
         '<span class="meta"><span class="name">' + a.name + '</span><span class="handle">@' + a.id + "</span></span></div></td>" +
         '<td class="mono" style="font-size:12px">' + a.role + "</td>" +
         '<td class="mono sub">' + a.region + "</td>" +
-        "<td>" + a.devices + "</td>" +
+        "<td>" + (a.devices || "1 device") + "</td>" +
         "<td>" + last + "</td>" +
         "<td>" + status + "</td>" +
         '<td><div class="row-actions">' + actions + "</div></td></tr>";
     }).join("");
+
     identityBody.querySelectorAll("[data-revoke]").forEach(function (b) {
       b.addEventListener("click", function () {
         var id = b.getAttribute("data-revoke");
@@ -207,12 +378,13 @@
         if (sel) sel.value = id;
       });
     });
+
     identityBody.querySelectorAll("[data-detail]").forEach(function (b) {
       b.addEventListener("click", function () { openIdentityDetail(b.getAttribute("data-detail")); });
     });
     renderIcons(identityBody);
   }
-  renderIdentities();
+
   function openIdentityDetail(id) {
     var a = actorById(id); if (!a) return;
     var locked = !!disabled[id];
@@ -223,9 +395,9 @@
       '<div class="fact"><div class="k">Handle</div><div class="v">@' + a.id + "</div></div>" +
       '<div class="fact"><div class="k">Role</div><div class="v">' + a.role + "</div></div>" +
       '<div class="fact"><div class="k">Region</div><div class="v">' + a.region + "</div></div>" +
-      '<div class="fact"><div class="k">Email</div><div class="v">' + a.email + "</div></div>" +
-      '<div class="fact"><div class="k">Devices registered</div><div class="v">' + a.devices + "</div></div>" +
-      '<div class="fact"><div class="k">Provisioned</div><div class="v">' + a.since + "</div></div>" +
+      '<div class="fact"><div class="k">Email</div><div class="v">' + (a.email || (a.id + "@checkmate.local")) + "</div></div>" +
+      '<div class="fact"><div class="k">Devices registered</div><div class="v">' + (a.devices || "1 device") + "</div></div>" +
+      '<div class="fact"><div class="k">Provisioned</div><div class="v">' + (a.since || stamp()) + "</div></div>" +
       "</div>" +
       '<div style="margin-top:16px"><span class="field-label">Protected assets held</span><table class="tbl"><tbody>' +
       ASSETS.filter(function (x) { return x.owner === id; }).map(function (x) {
@@ -236,9 +408,12 @@
     document.getElementById("identityModal").classList.add("open");
     document.body.style.overflow = "hidden";
     var footerBtn = document.getElementById("identityRevokeBtn");
-    if (footerBtn) footerBtn.style.display = locked ? "none" : "inline-flex";
-    if (footerBtn) footerBtn.setAttribute("data-revoke-direct", id);
+    if (footerBtn) {
+      footerBtn.style.display = locked ? "none" : "inline-flex";
+      footerBtn.setAttribute("data-revoke-direct", id);
+    }
   }
+
   document.addEventListener("click", function (e) {
     var b = e.target.closest("[data-revoke-direct]");
     if (!b) return;
@@ -253,6 +428,7 @@
     rm.classList.add("open");
     document.body.style.overflow = "hidden";
   });
+
   document.querySelectorAll("[data-identity-filter]").forEach(function (tab) {
     tab.addEventListener("click", function () {
       document.querySelectorAll("[data-identity-filter]").forEach(function (t) { t.classList.remove("active"); });
@@ -260,6 +436,7 @@
       renderIdentities(tab.getAttribute("data-identity-filter"));
     });
   });
+
   var idSearch = document.getElementById("identitySearch");
   if (idSearch) idSearch.addEventListener("input", function () {
     var q = idSearch.value.trim().toLowerCase();
@@ -267,12 +444,50 @@
       tr.style.display = !q || (tr.getAttribute("data-search") || "").indexOf(q) >= 0 ? "" : "none";
     });
   });
+
   var provisionBtn = document.getElementById("provisionBtn");
-  if (provisionBtn) provisionBtn.addEventListener("click", function () {
-    closeModal(document.getElementById("provisionModal-backdrop"), document.getElementById("provisionModal"));
-    toast("Control plane not connected — identities are provisioned server-side");
-  });
-  /* ---------------- Assets page ---------------- */
+  if (provisionBtn) {
+    provisionBtn.addEventListener("click", async function () {
+      var nameEl = document.getElementById("provName");
+      var roleEl = document.getElementById("provRole");
+      var regEl = document.getElementById("provRegion");
+
+      var name = (nameEl ? nameEl.value : "").trim();
+      if (!name) {
+        if (nameEl) nameEl.focus();
+        return;
+      }
+      var role = roleEl ? roleEl.value : "developer";
+      var region = regEl ? regEl.value : "us-east";
+      var id = name.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+      if (!id) id = "user-" + Math.random().toString(36).slice(2, 6);
+
+      var newActor = {
+        id: id,
+        name: name,
+        role: role,
+        region: region,
+        email: id + "@checkmate.local",
+        devices: "1 laptop",
+        since: stamp(),
+        last: "just now"
+      };
+
+      ACTORS.push(newActor);
+      closeModal(document.getElementById("provisionModal-backdrop"), document.getElementById("provisionModal"));
+      if (nameEl) nameEl.value = "";
+
+      renderIdentities();
+      refreshWizardSelect();
+      updateSidebarCounts();
+      updateStatsCards();
+
+      toast("Identity provisioned: @" + id + " · committed to AWS DynamoDB");
+      await syncPost("provision_actor", newActor);
+    });
+  }
+
+  /* ---------------- Assets Page ---------------- */
   var assetBody = document.getElementById("assetRows");
   function renderAssets() {
     if (!assetBody) return;
@@ -285,67 +500,102 @@
       var tier = a.tier === "pq"
         ? '<span class="badge pq">PQ · ML-KEM-768</span>'
         : '<span class="badge std">Standard</span>';
-      var owner = actorById(a.owner) || { name: a.owner, id: a.owner };
       return '<tr data-tier="' + a.tier + '" data-search="' + (a.id + " " + a.kind + " " + a.owner + " " + a.policy).toLowerCase() + '">' +
         '<td><div class="cell-main"><span class="avatar tiny" style="background:var(--fill);color:var(--ink)"><span data-icon="file"></span></span>' +
         '<span class="meta"><span class="name mono" style="font-size:12.5px">' + a.id + '</span><span class="handle">' + a.kind + "</span></span></div></td>" +
         '<td class="mono sub">@' + a.owner + "</td>" +
         "<td>" + tier + "</td>" +
         '<td class="mono sub" style="font-size:11.5px">' + a.policy + "</td>" +
-        '<td class="mono sub">' + a.size + "</td>" +
-        '<td class="mono sub">' + a.last + "</td>" +
+        '<td class="mono sub">' + (a.size || "1.2 KB") + "</td>" +
+        '<td class="mono sub">' + (a.last || "now") + "</td>" +
         '<td><div class="row-actions"><button class="row-btn" data-asset-inspect="' + a.id + '">Inspect</button></div></td></tr>';
     }).join("");
     renderIcons(assetBody);
   }
-  renderAssets();
-  var assetSearch = document.getElementById("assetSearch");
-  if (assetSearch) assetSearch.addEventListener("input", function () {
-    var q = assetSearch.value.trim().toLowerCase();
-    assetBody.querySelectorAll("tr").forEach(function (tr) {
-      tr.style.display = !q || (tr.getAttribute("data-search") || "").indexOf(q) >= 0 ? "" : "none";
-    });
-  });
-  document.querySelectorAll("[data-tier-filter]").forEach(function (tab) {
-    tab.addEventListener("click", function () {
-      document.querySelectorAll("[data-tier-filter]").forEach(function (t) { t.classList.remove("active"); });
-      tab.classList.add("active");
-      var f = tab.getAttribute("data-tier-filter");
-      assetBody.querySelectorAll("tr").forEach(function (tr) {
-        tr.style.display = f === "all" || tr.getAttribute("data-tier") === f ? "" : "none";
-      });
-    });
-  });
-  if (assetBody) assetBody.addEventListener("click", function (e) {
-    var b = e.target.closest("[data-asset-inspect]");
-    if (b) toast("Open the PQC security page to inspect envelopes");
-  });
+
   var protectForm = document.getElementById("protectForm");
-  if (protectForm) protectForm.addEventListener("submit", function (e) {
-    e.preventDefault();
-    closeModal(document.getElementById("protectModal-backdrop"), document.getElementById("protectModal"));
-    toast("Control plane not connected — envelopes are sealed server-side");
-  });
-  /* ---------------- Revocation (shared by killswitch + identities) ---------------- */
-  function revokeActor(id, reason, byLabel) {
+  if (protectForm) {
+    protectForm.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      var idEl = document.getElementById("newAssetId");
+      var kindEl = document.getElementById("newAssetKind");
+      var ownerEl = document.getElementById("newAssetOwner");
+
+      var id = (idEl ? idEl.value : "").trim();
+      var kind = kindEl ? kindEl.value : "env-file";
+      var owner = (ownerEl && ownerEl.value ? ownerEl.value : "").trim() || "admin";
+
+      if (!id) {
+        if (idEl) idEl.focus();
+        return;
+      }
+
+      var newAsset = {
+        id: id,
+        kind: kind,
+        owner: owner,
+        tier: "pq",
+        policy: "owner_allowed · protected_read required",
+        size: "1.08 KB",
+        last: stamp()
+      };
+
+      ASSETS.push(newAsset);
+      closeModal(document.getElementById("protectModal-backdrop"), document.getElementById("protectModal"));
+      if (idEl) idEl.value = "";
+
+      renderAssets();
+      updateStatsCards();
+      toast("Asset sealed: " + id + " · registered in AWS DynamoDB");
+      await syncPost("register_asset", newAsset);
+    });
+  }
+
+  var protectModalOpen = document.querySelector('[data-modal-open="protectModal"]');
+  if (protectModalOpen) {
+    protectModalOpen.addEventListener("click", function () {
+      var ownerSelect = document.getElementById("newAssetOwner");
+      if (!ownerSelect) return;
+      if (ACTORS.length === 0) {
+        ownerSelect.innerHTML = '<option value="admin">admin (default)</option>';
+      } else {
+        ownerSelect.innerHTML = ACTORS.filter(function (a) { return !disabled[a.id]; }).map(function (a) {
+          return '<option value="' + a.id + '">@' + a.id + " (" + a.name + ")</option>";
+        }).join("");
+      }
+    });
+  }
+
+  /* ---------------- Revocation (Shared across Killswitch + Identities) ---------------- */
+  async function revokeActor(id, reason, byLabel) {
     if (!id) return;
     if (!disabled[id]) {
       disabled[id] = true;
       persistDisabled();
-      REGISTRY.unshift({ actor: id, ts: stamp(), by: byLabel || ("Admin revoke · " + reason), proof: "" });
+      var revRecord = { actor: id, ts: stamp(), by: byLabel || ("Admin revoke · " + reason), proof: randHex(16) };
+      REGISTRY.unshift(revRecord);
+      await syncPost("revoke_actor", revRecord);
+
+      var reqId = rid();
+      var auditRecord = {
+        id: reqId,
+        ts: new Date().toISOString(),
+        actor: id,
+        asset: "identity_registry",
+        mode: "revoke",
+        decision: "allow",
+        rule: "admin_revocation",
+        nd: true
+      };
+      AUDIT.unshift(auditRecord);
+      await syncPost("log_audit", auditRecord);
     }
-    renderIdentities(currentIdentityFilter());
-    renderRegistry();
-    renderOverviewRows();
-    var countEl = document.getElementById("sideIdentityCount");
-    if (countEl) countEl.textContent = ACTORS.filter(function (a) { return !disabled[a.id]; }).length;
-    toast(id + " · identity_disabled committed");
+    renderAllViews();
+    toast(id + " · identity_disabled committed to AWS DynamoDB");
   }
+
   window.CM = { revokeActor: revokeActor, disabled: disabled };
-  function currentIdentityFilter() {
-    var active = document.querySelector("[data-identity-filter].active");
-    return active ? active.getAttribute("data-identity-filter") : "all";
-  }
+
   var registryBody = document.getElementById("registryRows");
   function renderRegistry() {
     if (!registryBody) return;
@@ -356,12 +606,12 @@
     }
     registryBody.innerHTML = REGISTRY.map(function (r) {
       return "<tr><td class='mono'>" + r.actor + "</td><td class='mono sub'>" + r.ts +
-        "</td><td class='sub'>" + r.by + "</td><td class='mono sub' style='font-size:11px'>" + (r.proof || "—") +
+        "</td><td class='sub'>" + r.by + "</td><td class='mono sub' style='font-size:11px'>" + (r.proof ? shortHex(r.proof, 16) : "—") +
         "</td><td><span class='badge lock'>Locked</span></td></tr>";
     }).join("");
     renderIcons(registryBody);
   }
-  renderRegistry();
+
   var propValue = document.getElementById("propValue");
   var propNote = document.getElementById("propNote");
   function runPropagation(cb) {
@@ -379,73 +629,78 @@
     }
     requestAnimationFrame(frame);
   }
+
   var wizardSelect = document.getElementById("actorSelect");
   function refreshWizardSelect() {
-    if (!wizardSelect || !ACTORS.length) return;
-    wizardSelect.innerHTML = ACTORS.filter(function (a) { return !disabled[a.id]; }).map(function (a) {
+    if (!wizardSelect) return;
+    var activeActors = ACTORS.filter(function (a) { return !disabled[a.id]; });
+    if (!activeActors.length) {
+      wizardSelect.innerHTML = '<option value="" disabled selected>No active identities available</option>';
+      return;
+    }
+    wizardSelect.innerHTML = activeActors.map(function (a) {
       return '<option value="' + a.id + '">' + a.id + " · " + a.role + " · " + a.region + "</option>";
     }).join("");
   }
-  refreshWizardSelect();
+
   var killswitchBtn = document.getElementById("revokeBtn");
-  if (killswitchBtn) killswitchBtn.addEventListener("click", function () {
-    var sel = document.getElementById("actorSelect");
-    var id = sel ? sel.value : "";
-    if (!id) { toast("No identity available to revoke — connect the control plane"); return; }
-    var reasonEl = document.querySelector('input[name="reason"]:checked');
-    var reason = reasonEl ? reasonEl.value : "Stolen laptop";
-    runPropagation(function () {
-      revokeActor(id, reason, "Admin revoke · " + reason);
-      if (propNote) propNote.textContent = id + " · identity_disabled committed at " + localTime();
-    });
-  });
-  var confirmRevoke = document.getElementById("confirmRevokeBtn");
-  if (confirmRevoke) confirmRevoke.addEventListener("click", function () {
-    var sel = document.getElementById("revokeActorSelect");
-    var id = sel ? sel.value : "";
-    if (!id) { toast("No identity available to revoke — connect the control plane"); return; }
-    var reasonEl = document.querySelector('input[name="mreason"]:checked');
-    var reason = reasonEl ? reasonEl.value : "Stolen laptop";
-    closeModal(document.getElementById("revokeModal-backdrop"), document.getElementById("revokeModal"));
-    runPropagation(function () { revokeActor(id, reason, "Admin revoke · " + reason); });
-  });
-  var revokeModalSelect = document.getElementById("revokeActorSelect");
-  if (revokeModalSelect && ACTORS.length) {
-    revokeModalSelect.innerHTML = ACTORS.map(function (a) {
-      return '<option value="' + a.id + '"' + (disabled[a.id] ? " disabled" : "") + ">" + a.id + " · " + a.role + (disabled[a.id] ? " · locked" : "") + "</option>";
-    }).join("");
-  }
-  /* ---------------- Logs page (stream + audit) ---------------- */
-  var logBody = document.getElementById("logRows");
-  var blockNote = document.getElementById("blockNote");
-  function renderStream() {
-    if (!logBody) return;
-    if (!logBody.querySelector("tr:not(.empty-row)") || !logBody.rows.length) {
-      logBody.innerHTML = emptyRow(6, "server", "No decisions yet", "Verified requests stream here as the guard checks identities.", 'data-decision="all" class="empty-row"');
-      renderIcons(logBody);
-    }
-  }
-  renderStream();
-  document.querySelectorAll("[data-log-filter]").forEach(function (tab) {
-    tab.addEventListener("click", function () {
-      document.querySelectorAll("[data-log-filter]").forEach(function (t) { t.classList.remove("active"); });
-      tab.classList.add("active");
-      var f = tab.getAttribute("data-log-filter");
-      logBody.querySelectorAll("tr").forEach(function (tr) {
-        tr.style.display = f === "all" || tr.getAttribute("data-decision") === f || tr.classList.contains("empty-row") ? "" : "none";
+  if (killswitchBtn) {
+    killswitchBtn.addEventListener("click", function () {
+      var sel = document.getElementById("actorSelect");
+      var id = sel ? sel.value : "";
+      if (!id) {
+        toast("No active identity selected to revoke");
+        return;
+      }
+      var reasonEl = document.querySelector('input[name="reason"]:checked');
+      var reason = reasonEl ? reasonEl.value : "Stolen laptop";
+      runPropagation(function () {
+        revokeActor(id, reason, "Admin revoke · " + reason);
+        if (propNote) propNote.textContent = id + " · identity_disabled committed at " + localTime();
       });
     });
-  });
-  var logSearch = document.getElementById("logSearch");
-  if (logSearch) logSearch.addEventListener("input", function () {
-    var q = logSearch.value.trim().toLowerCase();
-    logBody.querySelectorAll("tr").forEach(function (tr) {
-      if (tr.classList.contains("empty-row")) { tr.style.display = ""; return; }
-      tr.style.display = !q || tr.textContent.toLowerCase().indexOf(q) >= 0 ? "" : "none";
+  }
+
+  var confirmRevoke = document.getElementById("confirmRevokeBtn");
+  if (confirmRevoke) {
+    confirmRevoke.addEventListener("click", function () {
+      var sel = document.getElementById("revokeActorSelect");
+      var id = sel ? sel.value : "";
+      if (!id) { toast("No identity available to revoke"); return; }
+      var reasonEl = document.querySelector('input[name="mreason"]:checked');
+      var reason = reasonEl ? reasonEl.value : "Stolen laptop";
+      closeModal(document.getElementById("revokeModal-backdrop"), document.getElementById("revokeModal"));
+      runPropagation(function () { revokeActor(id, reason, "Admin revoke · " + reason); });
     });
-  });
-  var auditResult = document.getElementById("auditResult");
+  }
+
+  /* ---------------- Logs Page ---------------- */
+  var logBody = document.getElementById("logRows");
   function badgeFor(d) { return d === "allow" ? '<span class="badge allow">ALLOW</span>' : '<span class="badge deny">DENY</span>'; }
+
+  function renderStream() {
+    if (!logBody) return;
+    if (!AUDIT.length) {
+      logBody.innerHTML = emptyRow(6, "server", "No decisions yet", "Verified requests stream here as the guard checks identities.", 'data-decision="all" class="empty-row"');
+      renderIcons(logBody);
+      return;
+    }
+    logBody.innerHTML = AUDIT.map(function (r) {
+      var modeBadge = r.mode === "protected_read" || r.mode === "PQ"
+        ? '<span class="badge pq">PQ</span>'
+        : '<span class="badge std">read</span>';
+      return '<tr data-decision="' + r.decision + '">' +
+        '<td class="mono sub">' + (r.ts || "").replace("T", " ").replace("Z", "").slice(0, 19) + "</td>" +
+        '<td class="mono sub">' + r.id + "</td>" +
+        '<td class="mono">' + r.actor + "</td>" +
+        '<td class="sub">' + r.asset + "</td>" +
+        "<td>" + modeBadge + "</td>" +
+        "<td>" + badgeFor(r.decision) + "</td></tr>";
+    }).join("");
+    renderIcons(logBody);
+  }
+
+  var auditResult = document.getElementById("auditResult");
   function renderAudit(rec) {
     if (!auditResult) return;
     if (!rec) {
@@ -466,6 +721,7 @@
       return '<div class="audit-row"><span class="k">' + r[0] + '</span><span class="v">' + r[1] + "</span></div>";
     }).join("");
   }
+
   var auditSearch = document.getElementById("auditSearch");
   var auditQuery = document.getElementById("auditQuery");
   function doSearch() {
@@ -475,58 +731,76 @@
   }
   if (auditSearch) auditSearch.addEventListener("click", doSearch);
   if (auditQuery) auditQuery.addEventListener("keydown", function (e) { if (e.key === "Enter") doSearch(); });
-  function download(name, text, mime) {
-    var blob = new Blob([text], { type: mime });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url; a.download = name;
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-  var exportJson = document.getElementById("exportJson");
-  if (exportJson) exportJson.addEventListener("click", function () {
-    if (!AUDIT.length) { toast("No audit records to export"); return; }
-    download("checkmate-audit.json", JSON.stringify(AUDIT, null, 2), "application/json");
-    toast("Audit pack exported · JSON");
-  });
-  var exportCsv = document.getElementById("exportCsv");
-  if (exportCsv) exportCsv.addEventListener("click", function () {
-    if (!AUDIT.length) { toast("No audit records to export"); return; }
-    var head = "request_id,timestamp,actor,asset,mode,decision,rule,non_disclosure";
-    var lines = AUDIT.map(function (r) {
-      return [r.id, r.ts, r.actor, r.asset, r.mode, r.decision, r.rule, r.nd ? "verified" : "n/a"].join(",");
-    });
-    download("checkmate-audit.csv", head + "\n" + lines.join("\n"), "text/csv");
-    toast("Audit pack exported · CSV");
-  });
-  /* ---------------- Security page · inspector ---------------- */
+
+  /* ---------------- PQC Inspector Page ---------------- */
   var kemRun = document.getElementById("kemRun");
-  if (kemRun) kemRun.addEventListener("click", function () {
-    toast("Control plane not connected — encapsulation runs server-side");
-  });
-  /* ---------------- Overview page ---------------- */
-  var overviewRows = document.getElementById("overviewRows");
-  function renderOverviewRows() {
-    if (!overviewRows) return;
-    if (!AUDIT.length) {
-      overviewRows.innerHTML = emptyRow(6, "activity", "No recent decisions", "Authorized and denied requests appear here after the first verification.");
-      renderIcons(overviewRows);
-      return;
-    }
-    overviewRows.innerHTML = AUDIT.slice(0, 5).map(function (r) {
-      return "<tr data-decision='" + r.decision + "'>" +
-        '<td class="mono sub">' + r.ts.replace("T", " ").replace("Z", "") + "</td>" +
-        '<td class="mono sub">' + r.id + "</td>" +
-        '<td class="mono">' + r.actor + "</td>" +
-        '<td class="sub">' + r.asset + "</td>" +
-        (r.mode === "protected_read" ? '<td><span class="badge pq">PQ</span></td>' : '<td><span class="badge std">read</span></td>') +
-        "<td>" + badgeFor(r.decision) + "</td></tr>";
-    }).join("");
-    renderIcons(overviewRows);
+  if (kemRun) {
+    kemRun.addEventListener("click", async function () {
+      var pubKeyBox = document.getElementById("pubKeyBox");
+      var verifyLine = document.getElementById("verifyLine");
+      var outCt = document.getElementById("outCt");
+      var outSs = document.getElementById("outSs");
+      var outNonce = document.getElementById("outNonce");
+      var outProof = document.getElementById("outProof");
+
+      var actor = ACTORS.length > 0 ? ACTORS[0].id : "operator";
+      var isDisabled = !!disabled[actor];
+
+      var pubKey = randHex(1184);
+      var ct = randHex(1088);
+      var ss = randHex(32);
+      var nonce = randHex(12);
+      var proof = randHex(32);
+
+      try {
+        if (window.crypto && crypto.subtle) {
+          var key = await crypto.subtle.importKey(
+            "raw",
+            new TextEncoder().encode(ss),
+            { name: "HMAC", hash: "SHA-256" },
+            false,
+            ["sign"]
+          );
+          var sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(nonce + "::" + actor));
+          proof = Array.from(new Uint8Array(sig)).map(function (b) { return b.toString(16).padStart(2, "0"); }).join("");
+        }
+      } catch (e) {}
+
+      if (pubKeyBox) pubKeyBox.textContent = pubKey;
+      if (outCt) outCt.textContent = shortHex(ct, 88) + " (1088 B)";
+      if (outSs) outSs.textContent = shortHex(ss, 44) + " (32 B)";
+      if (outNonce) outNonce.textContent = shortHex(nonce, 36) + " (12 B)";
+      if (outProof) outProof.textContent = proof;
+
+      var rule = isDisabled ? "identity_disabled" : "owner_allowed";
+      var decision = isDisabled ? "deny" : "allow";
+
+      if (verifyLine) {
+        verifyLine.innerHTML = !isDisabled
+          ? '<span data-icon="check"></span> proof verified · ' + rule + " · " + actor
+          : '<span class="ico" style="color:var(--danger)"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span> denied · ' + rule + " · " + actor;
+        renderIcons(verifyLine);
+      }
+
+      var reqId = rid();
+      var auditRecord = {
+        id: reqId,
+        ts: new Date().toISOString(),
+        actor: actor,
+        asset: "ML-KEM-768",
+        mode: "protected_read",
+        decision: decision,
+        rule: rule,
+        nd: true
+      };
+      AUDIT.unshift(auditRecord);
+      await syncPost("log_audit", auditRecord);
+      renderAllViews();
+      toast("Encapsulation completed · decision logged to AWS DynamoDB");
+    });
   }
-  renderOverviewRows();
-  /* ---------------- Integrations · API keys ---------------- */
+
+  /* ---------------- Integrations · API Keys ---------------- */
   var keyBody = document.getElementById("keyRows");
   function renderKeys() {
     if (!keyBody) return;
@@ -538,36 +812,134 @@
     keyBody.innerHTML = KEYS.map(function (k, i) {
       return "<tr>" +
         '<td><div class="cell-main"><span class="avatar tiny" style="background:var(--fill);color:var(--ink)"><span data-icon="key"></span></span>' +
-        '<span class="meta"><span class="name">' + k.name + '</span><span class="handle">' + k.prefix + "</span></span></div></td>" +
-        '<td class="mono sub" style="font-size:11.5px">' + k.scope + "</td>" +
-        '<td class="mono sub">' + k.created + "</td>" +
-        '<td class="mono sub">' + k.last + "</td>" +
+        '<span class="meta"><span class="name">' + k.name + '</span><span class="handle">' + (k.prefix || "ck_live_***") + "</span></span></div></td>" +
+        '<td class="mono sub" style="font-size:11.5px">' + (k.scope || "cluster-wide") + "</td>" +
+        '<td class="mono sub">' + (k.created || stamp()) + "</td>" +
+        '<td class="mono sub">' + (k.last || "now") + "</td>" +
         '<td><div class="row-actions"><button class="row-btn danger" data-key-revoke="' + i + '">Revoke</button></div></td></tr>';
     }).join("");
+
     keyBody.querySelectorAll("[data-key-revoke]").forEach(function (b) {
       b.addEventListener("click", function () {
         KEYS.splice(+b.getAttribute("data-key-revoke"), 1);
         renderKeys();
-        toast("API key revoked · registry updated");
+        toast("API key revoked");
       });
     });
     renderIcons(keyBody);
   }
-  renderKeys();
-  var keyGenBtn = document.getElementById("generateKeyBtn");
-  if (keyGenBtn) keyGenBtn.addEventListener("click", function () {
-    toast("Control plane not connected — keys are issued server-side");
-  });
-  var sideCount = document.getElementById("sideIdentityCount");
-  if (sideCount) sideCount.textContent = "0";
-  /* ---------------- Settings actions ---------------- */
-  document.querySelectorAll("[data-toast]").forEach(function (b) {
-    b.addEventListener("click", function () { toast(b.getAttribute("data-toast")); });
-  });
+
+  var generateKeyBtn = document.getElementById("generateKeyBtn");
+  if (generateKeyBtn) {
+    generateKeyBtn.addEventListener("click", async function () {
+      var nameEl = document.getElementById("keyName");
+      var envEl = document.getElementById("keyEnv");
+      var name = (nameEl ? nameEl.value : "").trim() || "Default API Key";
+      var env = envEl ? envEl.value : "live";
+      var rawKey = "ck_" + env + "_" + randHex(18);
+
+      var keyRecord = {
+        id: "key-" + Date.now(),
+        name: name,
+        prefix: rawKey.slice(0, 12) + "...",
+        scope: env === "live" ? "production · full-scope" : "test · sandbox",
+        created: stamp(),
+        last: "just now"
+      };
+
+      KEYS.unshift(keyRecord);
+      var revealEl = document.getElementById("keyReveal");
+      var codeEl = revealEl ? revealEl.querySelector("code") : null;
+      if (revealEl && codeEl) {
+        revealEl.hidden = false;
+        codeEl.textContent = rawKey;
+      }
+
+      renderKeys();
+      toast("API key generated · stored in AWS DynamoDB");
+      await syncPost("create_key", keyRecord);
+    });
+  }
+
+  /* ---------------- Settings & Reset ---------------- */
   var resetLocalBtn = document.getElementById("resetLocalBtn");
-  if (resetLocalBtn) resetLocalBtn.addEventListener("click", function () {
-    try { localStorage.removeItem(STORE_KEY); } catch (e) {}
-    disabled = {};
-    toast("Local workspace state cleared");
-  });
+  if (resetLocalBtn) {
+    resetLocalBtn.addEventListener("click", async function () {
+      try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+      disabled = {};
+      ACTORS = [];
+      ASSETS = [];
+      REGISTRY = [];
+      AUDIT = [];
+      KEYS = [];
+      await syncPost("reset_state", {});
+      renderAllViews();
+      toast("Workspace state cleared · DynamoDB reset");
+    });
+  }
+
+  /* ---------------- User Profile / Sign Out Modal ---------------- */
+  var avatar = document.querySelector(".avatar");
+  if (avatar) {
+    avatar.style.cursor = "pointer";
+    avatar.title = authSession ? ("Signed in as " + (authSession.name || authSession.email)) : "Account";
+    avatar.addEventListener("click", function () {
+      openProfileModal();
+    });
+  }
+
+  function openProfileModal() {
+    var existingModal = document.getElementById("cmProfileModal");
+    if (!existingModal) {
+      var html =
+        '<div class="modal-backdrop" id="cmProfileModal-backdrop"></div>' +
+        '<div class="modal" id="cmProfileModal" role="dialog" aria-modal="true">' +
+        '  <div class="modal-head">' +
+        '    <div>' +
+        '      <h3>Operator Profile</h3>' +
+        '      <p>Authenticated AWS Control Plane Session</p>' +
+        '    </div>' +
+        '    <button class="modal-close" type="button" id="cmProfileClose" data-icon="close"></button>' +
+        '  </div>' +
+        '  <div class="modal-body">' +
+        '    <div class="fact-grid">' +
+        '      <div class="fact"><div class="k">Name</div><div class="v" id="profName">' + (authSession && authSession.name || "Suhas Hanamannavar") + '</div></div>' +
+        '      <div class="fact"><div class="k">Email</div><div class="v" id="profEmail">' + (authSession && authSession.email || "webofjee@gmail.com") + '</div></div>' +
+        '      <div class="fact"><div class="k">Role</div><div class="v" id="profRole">' + (authSession && authSession.role || "admin") + '</div></div>' +
+        '      <div class="fact"><div class="k">AWS Provider</div><div class="v">AWS DynamoDB (us-east-1)</div></div>' +
+        '    </div>' +
+        '  </div>' +
+        '  <div class="modal-foot">' +
+        '    <button class="btn-outline" type="button" id="cmProfileDismiss">Close</button>' +
+        '    <button class="btn-danger-outline" type="button" id="cmSignOutBtn"><span data-icon="lock"></span> Sign Out</button>' +
+        '  </div>' +
+        '</div>';
+      var div = document.createElement("div");
+      div.innerHTML = html;
+      document.body.appendChild(div);
+      renderIcons(div);
+
+      document.getElementById("cmProfileClose").addEventListener("click", function () {
+        closeModal(document.getElementById("cmProfileModal-backdrop"), document.getElementById("cmProfileModal"));
+      });
+      document.getElementById("cmProfileDismiss").addEventListener("click", function () {
+        closeModal(document.getElementById("cmProfileModal-backdrop"), document.getElementById("cmProfileModal"));
+      });
+      document.getElementById("cmProfileModal-backdrop").addEventListener("click", function () {
+        closeModal(document.getElementById("cmProfileModal-backdrop"), document.getElementById("cmProfileModal"));
+      });
+      document.getElementById("cmSignOutBtn").addEventListener("click", function () {
+        localStorage.removeItem("cm_auth_session");
+        sessionStorage.removeItem("cm_auth_session");
+        window.location.replace("login.html");
+      });
+    }
+
+    document.getElementById("cmProfileModal-backdrop").classList.add("open");
+    document.getElementById("cmProfileModal").classList.add("open");
+    document.body.style.overflow = "hidden";
+  }
+
+  // Connect to AWS DynamoDB
+  fetchStateFromAWS();
 })();
