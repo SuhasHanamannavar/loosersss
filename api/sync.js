@@ -1,23 +1,5 @@
-const { DynamoDBClient, ScanCommand, PutItemCommand, DeleteItemCommand } = require('@aws-sdk/client-dynamodb');
-
-const REGION = process.env.AWS_REGION || 'us-east-1';
-const ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
-const SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
-const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME || 'kin-data';
-
-let dynamoClient = null;
-function getClient() {
-  if (!dynamoClient && ACCESS_KEY_ID && SECRET_ACCESS_KEY) {
-    dynamoClient = new DynamoDBClient({
-      region: REGION,
-      credentials: {
-        accessKeyId: ACCESS_KEY_ID,
-        secretAccessKey: SECRET_ACCESS_KEY
-      }
-    });
-  }
-  return dynamoClient;
-}
+const { ScanCommand, PutItemCommand, DeleteItemCommand } = require('@aws-sdk/client-dynamodb');
+const { getClient, DATA_TABLE, REGION } = require('./_db');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json');
@@ -47,7 +29,7 @@ module.exports = async function handler(req, res) {
 
     try {
       const scanCmd = new ScanCommand({
-        TableName: TABLE_NAME,
+        TableName: DATA_TABLE,
         FilterExpression: 'begins_with(PK, :prefix)',
         ExpressionAttributeValues: {
           ':prefix': { S: 'CHECKMATE#' }
@@ -65,12 +47,35 @@ module.exports = async function handler(req, res) {
       items.forEach(item => {
         try {
           const pk = item.PK.S;
-          const data = JSON.parse(item.data.S);
-          if (pk === 'CHECKMATE#ACTOR') actors.push(data);
-          else if (pk === 'CHECKMATE#ASSET') assets.push(data);
-          else if (pk === 'CHECKMATE#REVOKED') registry.push(data);
-          else if (pk === 'CHECKMATE#AUDIT') audit.push(data);
-          else if (pk === 'CHECKMATE#KEY') keys.push(data);
+          if (pk === 'CHECKMATE#KEYS') {
+            keys.push({
+              id: item.SK.S.replace('KEY#', ''),
+              name: item.name ? item.name.S : 'API Key',
+              prefix: item.prefix ? item.prefix.S : 'ck_live_***',
+              status: item.status ? item.status.S : 'ACTIVE',
+              scopes: item.scopes ? JSON.parse(item.scopes.S) : ['read', 'protected_read', 'workspace_activation'],
+              created_at: item.created_at ? item.created_at.S : new Date().toISOString(),
+              last_used: item.last_used ? item.last_used.S : 'never'
+            });
+          } else if (pk === 'CHECKMATE#DECISIONS') {
+            const rawTime = item.time ? item.time.S : '';
+            audit.push({
+              id: item.requestId ? item.requestId.S : item.SK.S,
+              ts: rawTime,
+              time: rawTime.length >= 19 ? rawTime.substring(11, 19) : rawTime,
+              actor: item.actor ? item.actor.S : '',
+              asset: item.asset ? item.asset.S : '',
+              mode: item.mode ? item.mode.S : 'READ',
+              decision: item.decision ? item.decision.S : 'ALLOW'
+            });
+          } else if (item.data && item.data.S) {
+            const data = JSON.parse(item.data.S);
+            if (pk === 'CHECKMATE#ACTOR') actors.push(data);
+            else if (pk === 'CHECKMATE#ASSET') assets.push(data);
+            else if (pk === 'CHECKMATE#REVOKED') registry.push(data);
+            else if (pk === 'CHECKMATE#AUDIT') audit.push(data);
+            else if (pk === 'CHECKMATE#KEY') keys.push(data);
+          }
         } catch (e) {}
       });
 
@@ -80,7 +85,7 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({
         ok: true,
         connected: true,
-        aws: { region: REGION, table: TABLE_NAME },
+        aws: { region: REGION, table: DATA_TABLE },
         actors,
         assets,
         registry,
@@ -136,14 +141,14 @@ module.exports = async function handler(req, res) {
         sk = data.id || ('key-' + Date.now());
       } else if (action === 'reset_state') {
         const scanCmd = new ScanCommand({
-          TableName: TABLE_NAME,
+          TableName: DATA_TABLE,
           FilterExpression: 'begins_with(PK, :prefix)',
           ExpressionAttributeValues: { ':prefix': { S: 'CHECKMATE#' } }
         });
         const scanRes = await client.send(scanCmd);
         for (const item of (scanRes.Items || [])) {
           await client.send(new DeleteItemCommand({
-            TableName: TABLE_NAME,
+            TableName: DATA_TABLE,
             Key: { PK: item.PK, SK: item.SK }
           }));
         }
@@ -152,7 +157,7 @@ module.exports = async function handler(req, res) {
 
       if (pk && sk) {
         const putCmd = new PutItemCommand({
-          TableName: TABLE_NAME,
+          TableName: DATA_TABLE,
           Item: {
             PK: { S: pk },
             SK: { S: sk },

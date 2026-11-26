@@ -1,6 +1,10 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "rewrites": [
+    { "source": "/api/activate.ps1", "destination": "/api/script" },
+    { "source": "/activate.ps1", "destination": "/api/script" }
+  ],
   "headers": [
     {
       "source": "/assets/(.*)",

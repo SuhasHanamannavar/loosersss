@@ -1,23 +1,5 @@
-const { DynamoDBClient, GetItemCommand } = require('@aws-sdk/client-dynamodb');
-
-const REGION = process.env.AWS_REGION || 'us-east-1';
-const ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
-const SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
-const AUTH_TABLE = process.env.AUTH_TABLE_NAME || 'silica-users';
-
-let dynamoClient = null;
-function getClient() {
-  if (!dynamoClient && ACCESS_KEY_ID && SECRET_ACCESS_KEY) {
-    dynamoClient = new DynamoDBClient({
-      region: REGION,
-      credentials: {
-        accessKeyId: ACCESS_KEY_ID,
-        secretAccessKey: SECRET_ACCESS_KEY
-      }
-    });
-  }
-  return dynamoClient;
-}
+const { GetItemCommand } = require('@aws-sdk/client-dynamodb');
+const { getClient, REGION, AUTH_TABLE } = require('./_db');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json');

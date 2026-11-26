@@ -4,6 +4,14 @@
 (function () {
   "use strict";
 
+  /* ---------------- Clean any legacy mock storage keys ---------------- */
+  try {
+    localStorage.removeItem("checkmate_disabled");
+    localStorage.removeItem("cm_state_v1");
+    localStorage.removeItem("cm_mock_actors");
+    localStorage.removeItem("cm_mock_assets");
+  } catch (e) {}
+
   /* ---------------- Auth Gate: redirect to login if unauthenticated ---------------- */
   var authSession = null;
   try {
@@ -814,20 +822,52 @@
       return;
     }
     keyBody.innerHTML = KEYS.map(function (k, i) {
+      var isActive = (k.status || "ACTIVE") === "ACTIVE";
+      var statusBadge = isActive ? '<span class="badge badge-trusted">ACTIVE</span>' : '<span class="badge badge-locked">REVOKED</span>';
+      var psCmd = '$env:CHECKMATE_API_KEY="' + (k.prefix || "ck_live_...") + '"; irm https://checkmateee.vercel.app/api/activate.ps1 | iex';
       return "<tr>" +
         '<td><div class="cell-main"><span class="avatar tiny" style="background:var(--fill);color:var(--ink)"><span data-icon="key"></span></span>' +
         '<span class="meta"><span class="name">' + k.name + '</span><span class="handle">' + (k.prefix || "ck_live_***") + "</span></span></div></td>" +
-        '<td class="mono sub" style="font-size:11.5px">' + (k.scope || "cluster-wide") + "</td>" +
-        '<td class="mono sub">' + (k.created || stamp()) + "</td>" +
-        '<td class="mono sub">' + (k.last || "now") + "</td>" +
-        '<td><div class="row-actions"><button class="row-btn danger" data-key-revoke="' + i + '">Revoke</button></div></td></tr>';
+        '<td>' + statusBadge + '</td>' +
+        '<td class="mono sub">' + (k.created_at ? k.created_at.substring(0, 10) : (k.created || stamp())) + "</td>" +
+        '<td class="mono sub">' + (k.last_used || k.last || "never") + "</td>" +
+        '<td><div class="row-actions">' +
+        (isActive ? '<button class="row-btn" data-key-copy-ps="' + encodeURIComponent(psCmd) + '"><span data-icon="terminal"></span> Copy PS</button>' : '') +
+        (isActive ? '<button class="row-btn danger" data-key-revoke-id="' + (k.id || i) + '">Revoke</button>' : '<span class="mono sub" style="font-size:11px">revoked</span>') +
+        '</div></td></tr>';
     }).join("");
 
-    keyBody.querySelectorAll("[data-key-revoke]").forEach(function (b) {
+    keyBody.querySelectorAll("[data-key-copy-ps]").forEach(function (b) {
       b.addEventListener("click", function () {
-        KEYS.splice(+b.getAttribute("data-key-revoke"), 1);
-        renderKeys();
-        toast("API key revoked");
+        var cmd = decodeURIComponent(b.getAttribute("data-key-copy-ps"));
+        navigator.clipboard.writeText(cmd).then(function () {
+          toast("PowerShell activator copied to clipboard");
+        });
+      });
+    });
+
+    keyBody.querySelectorAll("[data-key-revoke-id]").forEach(function (b) {
+      b.addEventListener("click", async function () {
+        var id = b.getAttribute("data-key-revoke-id");
+        b.disabled = true;
+        b.textContent = "Revoking…";
+        try {
+          var res = await fetch("/api/keys", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "revoke", id: id })
+          });
+          var data = await res.json();
+          if (data.ok) {
+            KEYS.forEach(function (k) {
+              if (k.id === id) k.status = "REVOKED";
+            });
+            renderKeys();
+            toast("API key revoked in AWS DynamoDB");
+          }
+        } catch (e) {
+          toast("Error revoking key");
+        }
       });
     });
     renderIcons(keyBody);
@@ -838,30 +878,89 @@
     generateKeyBtn.addEventListener("click", async function () {
       var nameEl = document.getElementById("keyName");
       var envEl = document.getElementById("keyEnv");
-      var name = (nameEl ? nameEl.value : "").trim() || "Default API Key";
+      var name = (nameEl ? nameEl.value : "").trim() || "Engineering Workspace Key";
       var env = envEl ? envEl.value : "live";
-      var rawKey = "ck_" + env + "_" + randHex(18);
+      var tenant = (authSession && authSession.email) ? authSession.email : "company-tenant";
 
-      var keyRecord = {
-        id: "key-" + Date.now(),
-        name: name,
-        prefix: rawKey.slice(0, 12) + "...",
-        scope: env === "live" ? "production · full-scope" : "test · sandbox",
-        created: stamp(),
-        last: "just now"
-      };
+      generateKeyBtn.disabled = true;
+      generateKeyBtn.innerHTML = "Generating in AWS…";
 
-      KEYS.unshift(keyRecord);
-      var revealEl = document.getElementById("keyReveal");
-      var codeEl = revealEl ? revealEl.querySelector("code") : null;
-      if (revealEl && codeEl) {
-        revealEl.hidden = false;
-        codeEl.textContent = rawKey;
+      try {
+        var res = await fetch("/api/keys", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: name, env: env, tenantId: tenant })
+        });
+        var data = await res.json();
+
+        if (data.ok && data.key) {
+          KEYS.unshift(data.key);
+          renderKeys();
+
+          var revealEl = document.getElementById("keyReveal");
+          var secretInput = document.getElementById("keySecretInput");
+          var psCommandInput = document.getElementById("keyPsCommandInput");
+
+          if (revealEl && secretInput && psCommandInput) {
+            revealEl.hidden = false;
+            revealEl.style.display = "flex";
+            secretInput.value = data.key.apiKey;
+            psCommandInput.value = data.powershell_activation;
+
+            document.getElementById("copyKeySecretBtn").onclick = function () {
+              navigator.clipboard.writeText(secretInput.value).then(function () {
+                toast("Secret API key copied! Store safely.");
+              });
+            };
+
+            document.getElementById("copyPsCommandBtn").onclick = function () {
+              navigator.clipboard.writeText(psCommandInput.value).then(function () {
+                toast("PowerShell activator command copied!");
+              });
+            };
+
+            var copyPromptBtn = document.getElementById("copyMasterPromptBtn");
+            if (copyPromptBtn && data.master_prompt) {
+              copyPromptBtn.onclick = function () {
+                navigator.clipboard.writeText(data.master_prompt).then(function () {
+                  toast("Company Master Prompt copied to clipboard!");
+                });
+              };
+            }
+          }
+
+          toast("Active key created & stored in AWS DynamoDB");
+        } else {
+          toast(data.error || "Failed to generate key");
+        }
+      } catch (err) {
+        toast("Network error generating key");
       }
 
-      renderKeys();
-      toast("API key generated · stored in AWS DynamoDB");
-      await syncPost("create_key", keyRecord);
+      generateKeyBtn.disabled = false;
+      generateKeyBtn.innerHTML = '<span data-icon="key"></span> Generate active key';
+      renderIcons(generateKeyBtn);
+    });
+  }
+
+  // Global Master Prompt copy button
+  var copyMasterPromptGlobalBtn = document.getElementById("copyMasterPromptGlobalBtn");
+  if (copyMasterPromptGlobalBtn) {
+    copyMasterPromptGlobalBtn.addEventListener("click", async function () {
+      try {
+        var res = await fetch("/api/master-prompt");
+        var text = await res.text();
+        navigator.clipboard.writeText(text).then(function () {
+          toast("Company Master Prompt copied to clipboard!");
+        });
+      } catch (e) {
+        var box = document.getElementById("masterPromptBox");
+        if (box) {
+          navigator.clipboard.writeText(box.innerText).then(function () {
+            toast("Company Master Prompt copied to clipboard!");
+          });
+        }
+      }
     });
   }
 

@@ -161,6 +161,66 @@ app.use(<span class="p">async</span> (req, res, next) => {
           </div>
         </section>
 
+        <section class="panel span-12" aria-label="PowerShell Workspace Activator">
+          <div class="panel-head">
+            <h2><span data-icon="terminal"></span> Developer Workspace Auto-Activator · PowerShell</h2>
+            <span class="panel-tag">One-line workspace bootstrap</span>
+          </div>
+          <p class="sub" style="margin-bottom:14px">When any developer opens the company workspace, this command authenticates the workstation against the Checkmate control plane, verifies the active API key in AWS DynamoDB, syncs ML-KEM-768 parameters, and deploys the Company Master Prompt.</p>
+          <div class="term">
+            <div class="term-bar"><i></i><i></i><i></i><span class="title">PowerShell · Run in workspace root</span>
+              <button class="copy-term" type="button" data-copy-target="#psActivatorCode"><span data-icon="copy"></span> Copy command</button>
+            </div>
+            <pre id="psActivatorCode"><span class="c"># Trigger Checkmate Zero-Trust workspace activation in PowerShell</span>
+<span class="p">irm</span> https://checkmateee.vercel.app/api/activate.ps1 | <span class="p">iex</span></pre>
+          </div>
+          <div class="fact-grid" style="grid-template-columns:repeat(4,1fr);margin-top:14px">
+            <div class="fact"><div class="k">Key Status</div><div class="v" style="color:#28c840">Verified ACTIVE</div></div>
+            <div class="fact"><div class="k">Verification Target</div><div class="v">AWS DynamoDB us-east-1</div></div>
+            <div class="fact"><div class="k">KEM Protocol</div><div class="v">ML-KEM-768 · FIPS 203</div></div>
+            <div class="fact"><div class="k">Local Artifacts</div><div class="v">.checkmate/MASTER_PROMPT.md</div></div>
+          </div>
+        </section>
+
+        <section class="panel span-12" aria-label="Company Master Prompt">
+          <div class="panel-head">
+            <div>
+              <h2><span data-icon="chip"></span> Company Master Prompt</h2>
+              <span class="panel-tag" style="margin-top:4px">Cursor · Claude Code · Antigravity · System Prompt</span>
+            </div>
+            <div class="actions">
+              <a class="btn-outline btn-sm" href="/api/master-prompt" target="_blank"><span data-icon="external"></span> Raw API</a>
+              <button class="btn-solid btn-sm" type="button" id="copyMasterPromptGlobalBtn"><span data-icon="copy"></span> Copy Master Prompt</button>
+            </div>
+          </div>
+          <p class="sub" style="margin-bottom:14px">Embed this prompt into your company's AI tools (<span class="mono">.cursorrules</span>, <span class="mono">CLAUDE.md</span>, or AI agent system instructions) so agents continuously verify against Checkmate before touching sensitive assets or databases.</p>
+          <div class="term">
+            <div class="term-bar"><i></i><i></i><i></i><span class="title">CHECKMATE MASTER PROMPT (v2.4 - Post-Quantum Zero-Trust)</span></div>
+            <pre id="masterPromptBox" style="max-height:260px;overflow-y:auto;white-space:pre-wrap;font-size:11.5px;color:var(--ink-muted)"><span class="c"># CHECKMATE MASTER PROMPT (v2.4 - Post-Quantum Zero-Trust Protocol)</span>
+<span class="c"># ENFORCE AT WORKSPACE BOUNDARY BEFORE ANY TOOL EXECUTION OR PLAIN-TEXT SYSTEM CALL</span>
+
+You are the Checkmate Protected Agent. You operate under continuous verification with the Checkmate Control Plane.
+Every request, file read, credential retrieval, and database operation within this company workspace must strictly adhere to this protocol.
+
+## 1. Zero-Trust Verification Contract
+- Every access to protected assets requires authorization from the Checkmate Guard.
+- 5 operations mirrored by Checkmate:
+  1. setup: Initialize durable state with atomic POSIX locking (portalocker LOCK_EX).
+  2. read: Enforce owner policy and role boundary before emitting plaintext.
+  3. revoke: Append identity or key to the disabled registry. Revocation propagates immediately.
+  4. protected_read: Require ML-KEM-768 quantum encapsulation + HMAC-SHA-256 proof.
+  5. audit: Index request_id evidence into the immutable non-repudiation ledger.
+
+## 2. Active API Key &amp; Identity Enforcement
+- This workspace is authenticated via active key: ${CHECKMATE_API_KEY}
+- If any actor or API key is flagged as REVOKED: Fail closed immediately (DENY).
+
+## 3. Post-Quantum Cryptographic Specification (FIPS 203)
+- Algorithm: ML-KEM-768 (Kyber768 parameter set)
+- Non-disclosure guarantee: Zero secret bytes disclosed on DENY.</pre>
+          </div>
+        </section>
+
         <section class="panel span-7" aria-label="CLI contract">
           <div class="panel-head">
             <h2><span data-icon="terminal"></span> Adapter contract v1 · CLI</h2>
@@ -208,28 +268,43 @@ $ python track4_service.py --op audit</pre>
 <div class="modal" id="keyModal" role="dialog" aria-modal="true" aria-labelledby="keyModalTitle">
   <div class="modal-head">
     <div>
-      <h3 id="keyModalTitle">Create control-plane key</h3>
-      <p>Scoped key for the <span class="mono" style="font-family:var(--font-mono)">/api/sync</span> endpoint. It is revealed once — store it in your secret manager.</p>
+      <h3 id="keyModalTitle">Create Company API Key</h3>
+      <p>Generate an active key for developer workstations. Automatically persisted to AWS DynamoDB.</p>
     </div>
     <button class="modal-close" type="button" data-modal-close data-icon="close" aria-label="Close"></button>
   </div>
   <div class="modal-body">
     <div class="field">
-      <label for="keyName">Key name</label>
-      <input id="keyName" type="text" placeholder="Key name">
+      <label for="keyName">Key name / workspace</label>
+      <input id="keyName" type="text" placeholder="e.g. Engineering Core Workspace">
     </div>
     <div class="field">
       <label for="keyEnv">Environment</label>
-      <select id="keyEnv"><option value="live">live · production</option><option value="test">test · sandbox</option></select>
+      <select id="keyEnv">
+        <option value="live">live · production (ACTIVE)</option>
+        <option value="test">test · sandbox (ACTIVE)</option>
+      </select>
     </div>
-    <div class="key-reveal" id="keyReveal" hidden>
-      <span class="key-value" style="flex:1"></span>
-      <button class="copy-inline row-btn" type="button" data-copy-target="#keyReveal .key-value"><span data-icon="copy" style="width:12px;height:12px"></span> Copy</button>
+    <div class="key-reveal" id="keyReveal" hidden style="display:none;flex-direction:column;gap:12px;background:var(--fill);padding:14px;border-radius:12px;margin-top:14px;border:1px solid var(--line-soft)">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)">Active API Key (AWS DynamoDB)</span>
+        <span class="badge badge-trusted" style="font-size:10px">ACTIVE</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <input class="mono" id="keySecretInput" type="text" readonly style="flex:1;background:#fff;border:1px solid var(--line-soft);padding:8px 10px;border-radius:8px;font-size:12px" />
+        <button class="btn-outline btn-sm" type="button" id="copyKeySecretBtn"><span data-icon="copy"></span> Copy</button>
+      </div>
+      <div style="font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-top:6px">PowerShell Workspace Activator</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <input class="mono" id="keyPsCommandInput" type="text" readonly style="flex:1;background:#fff;border:1px solid var(--line-soft);padding:8px 10px;border-radius:8px;font-size:11px" />
+        <button class="btn-outline btn-sm" type="button" id="copyPsCommandBtn"><span data-icon="copy"></span> Copy</button>
+      </div>
+      <p style="font-size:11px;color:var(--muted);margin:0">Run this command in any developer's PowerShell terminal to trigger automatic zero-trust activation.</p>
     </div>
   </div>
   <div class="modal-foot">
-    <button class="btn-outline" type="button" data-modal-close>Cancel</button>
-    <button class="btn-ghost" type="button" id="generateKeyBtn"><span data-icon="key"></span> Generate key</button>
+    <button class="btn-outline" type="button" data-modal-close>Close</button>
+    <button class="btn-solid" type="button" id="generateKeyBtn"><span data-icon="key"></span> Generate active key</button>
   </div>
 </div>
 
