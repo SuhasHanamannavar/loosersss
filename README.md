@@ -14,7 +14,7 @@ third-party source code or artwork is copied.
 | File | Purpose |
 | --- | --- |
 | `index.html` | Marketing field book (unchanged): hero, threat model accordion, engine loop, security invariants, console module cards, footer wordmark, engine-contract reader modal |
-| `dashboard.html` | Legacy operations board: six interactive demonstration modules (KPI banner, killswitch, live stream, PQC inspector, access matrix, audit explorer) |
+| `dashboard.html` | Operations board launcher: six module cards (telemetry, killswitch, stream, inspector, matrix, audit) that link out to their dedicated split pages; keeps legacy anchor ids `#kpis`, `#killswitch`, `#stream`, `#inspector`, `#matrix`, `#audit` |
 | `console.html` | App console · Overview: executive telemetry, recent verified decisions, engine status, containment scenarios A / B / C |
 | `identities.html` | Identity roster: trusted / locked filters, search, profile modal, one-click revoke with reason wizard |
 | `assets.html` | Protected assets envelope store: tier badges, policy rules, protect-asset modal, sealing walkthrough |
@@ -28,33 +28,36 @@ third-party source code or artwork is copied.
 ## App console shell
 
 `assets/css/app.css` layers over `assets/css/console.css` and adds the workspace
-shell: persistent left sidebar (Monitor / Manage / Develop / Workspace groups),
-sticky blurred topbar with search field, Production / Test segmented control and
-sync status, page headers, stat cards, resource tables, filter tabs, modals,
-terminal code blocks, scenario cards, facts and timeline lists, and a danger
-zone. `assets/js/app.js` provides the shared icon set, active-nav state, mobile
+shell: persistent left sidebar (Monitor / Protect / Develop / Workspace groups,
+hairline-separated like Resend-style workspaces), sticky blurred topbar with
+search field, Production / Test segmented control and sync status, page headers
+with a solid black primary action top-right, stat cards, resource tables, filter
+tabs, modals, terminal code blocks, launcher cards, scenario cards, facts and
+timeline lists, and a danger zone. `assets/js/app.js` provides the shared icon set, active-nav state, mobile
 drawer, generic tabs / modals / copy controls, the demo revocation model
 (localStorage-persisted disabled set), identity and asset rendering, killswitch
 flow, stream generator, KEM demo, audit export and key generation.
 
-### Console modules (legacy `dashboard.html`)
+### Module map (`dashboard.html` launcher → dedicated pages)
 
-1. Executive telemetry and KPI banner — active identities, revoked identities, protected assets, PQC engine status, 24 h authorization health.
-2. Emergency killswitch and device-loss panel — actor select, loss reason, cluster revoke trigger, propagation readout, revocation registry.
-3. Live zero-trust access stream — timestamp, request ID, actor, asset, mode (`read` / `protected_read`), ALLOW / DENY badges, blocked-access callout.
-4. PQC cryptographic inspector — 1184-byte public key view, ML-KEM-768 encapsulation outputs (1088 B ciphertext, 32 B shared secret, nonce, HMAC-SHA-256 proof), harvest-now-decrypt-later meter.
-5. Asset ownership and access matrix — asset, owner, sensitivity tier, policy rule.
-6. Audit and compliance explorer — request ID lookup, decision / rule evidence, non-disclosure check, JSON and CSV export.
+One function per page; the old six-panel single board was split into the following dedicated console views:
+
+1. Executive telemetry → `console.html` — active identities, revoked identities, protected assets, PQC engine status, 24 h authorization health.
+2. Emergency killswitch and device-loss panel → `killswitch.html` — actor select, loss reason, cluster revoke trigger, propagation readout, signed revocation registry.
+3. Live zero-trust access stream → `logs.html` — timestamp, request ID, actor, asset, mode (`read` / `protected_read`), ALLOW / DENY badges, blocked-access callout.
+4. PQC cryptographic inspector → `security.html` — 1184-byte public key view, ML-KEM-768 encapsulation outputs (1088 B ciphertext, 32 B shared secret, nonce, HMAC-SHA-256 proof), harvest-now-decrypt-later meter.
+5. Asset ownership and access matrix → `assets.html` — asset, owner, sensitivity tier, policy rule.
+6. Audit and compliance explorer → `logs.html#audit` — request ID lookup, decision / rule evidence, non-disclosure check, JSON and CSV export.
 
 ## Structure
 
 ```
 assets/
   css/site.css       marketing design tokens and components (landing page)
-  css/console.css    shared console tokens + legacy six-module board styles
-  css/app.css        app workspace shell and shared components
+  css/console.css    shared console design tokens and legacy component classes
+  css/app.css        app workspace shell, sidebar, launcher cards and shared components
   js/site.js         marketing icons, nav, reveals, accordion, carousel, reader modal
-  js/console.js      legacy board state, stream, revoke flow, KEM demo, audit export
+  js/console.js      retained legacy board script (reference only; not loaded by the launcher)
   js/app.js          app console: shell, demo model, roster, assets, killswitch, logs, SDK, settings
   img/brand/         chess-sticker brand marks (WebP)
   icons/favicon.svg  chess-king mark
@@ -69,7 +72,7 @@ vercel.json          clean URLs, long cache for /assets
 
 - Palette: Apple light surfaces `#f5f5f7` / `#ffffff`, ink `#1d1d1f`, secondary `#3a3a3c`, muted `#6e6e73`, hairline `#d2d2d7`; system red `#ff3b30` for denial / locked states. No blue, purple or green theme tones.
 - Type: Apple system stack (`-apple-system`, SF Pro Display / SF Pro Text) for UI and headlines; SF Mono / Menlo stack for labels, indices and hex data.
-- Components: translucent blurred toolbar, gray-track segmented controls with white active thumb, white hairline cards with soft shadows, black primary pills, destructive red revoke control, mono data labels, macOS window traffic lights on terminals and the legacy board, hairline tables and status badges.
+- Components: translucent blurred toolbar, gray-track segmented controls with white active thumb, white hairline cards with soft shadows, solid black primary pills, destructive red revoke control, mono data labels, macOS window traffic lights on terminal panels, hairline tables and status badges.
 - Responsive: desktop 1440, laptop 1280, tablet 768, mobile 390; the app sidebar collapses to a drawer under 1080 px; console grids collapse under 1080 / 720 px.
 
 ## Interactions

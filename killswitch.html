@@ -22,7 +22,7 @@
       <a class="side-item" data-nav="security.html" href="security.html"><span data-icon="chip"></span>PQC security</a>
     </div>
     <div class="side-group">
-      <p class="side-label">Manage</p>
+      <p class="side-label">Protect</p>
       <a class="side-item" data-nav="identities.html" href="identities.html"><span data-icon="users"></span>Identities<span class="count" id="sideIdentityCount"></span></a>
       <a class="side-item" data-nav="assets.html" href="assets.html"><span data-icon="file"></span>Protected assets</a>
       <a class="side-item" data-nav="killswitch.html" href="killswitch.html"><span data-icon="bolt"></span>Killswitch</a>
@@ -40,6 +40,10 @@
       <div class="side-engine">
         <div class="k">Engine</div>
         <div class="v"><span class="dot"></span>ML-KEM-768 · 3.8 ms</div>
+      </div>
+      <div class="side-links">
+        <a class="side-link" href="index.html"><span data-icon="external"></span>Field book</a>
+        <a class="side-link" href="settings.html"><span data-icon="refresh"></span>Reset demo state</a>
       </div>
     </div>
   </aside>
@@ -62,6 +66,10 @@
           <span class="mono-tag">Emergency containment · identity_disabled</span>
           <h1>Killswitch.</h1>
           <p class="sub">One commit writes the actor into the disabled registry before the next request read. Revoked actors never reach encapsulation — DENY happens before plaintext can be calculated.</p>
+        </div>
+        <div class="actions">
+          <a class="btn-solid" href="identities.html"><span data-icon="users"></span>Manage identities</a>
+          <a class="btn-outline" href="logs.html"><span data-icon="server"></span>Open stream</a>
         </div>
       </div>
 
