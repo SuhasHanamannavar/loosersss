@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { ScanCommand, PutItemCommand, UpdateItemCommand } = require('@aws-sdk/client-dynamodb');
+const { ScanCommand, PutItemCommand, UpdateItemCommand, GetItemCommand } = require('@aws-sdk/client-dynamodb');
 const { getClient, DATA_TABLE, MASTER_PROMPT } = require('./_db');
 
 module.exports = async function handler(req, res) {
@@ -18,8 +18,8 @@ module.exports = async function handler(req, res) {
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
     const apiKey = (body.apiKey || body.key || req.headers['x-checkmate-key'] || '').trim();
-    const rawDev = (body.developer || body.user || 'developer').trim();
-    const devName = (body.name || rawDev).trim();
+    const rawDev = (body.developer || body.user || '').trim();
+    const devName = (body.name || '').trim();
     const devEmail = (body.email || '').trim();
     const hostname = (body.hostname || 'workstation').trim();
     const workspace = (body.workspace || 'company-workspace').trim();
@@ -108,10 +108,68 @@ module.exports = async function handler(req, res) {
     const timeStr = now.slice(11, 19);
     const requestId = 'req-' + crypto.randomBytes(3).toString('hex');
 
-    // Clean actor ID (alphanumeric, lowercase)
-    const actorId = rawDev.toLowerCase().replace(/[^a-z0-9_-]/g, '') || 'developer';
-    const displayName = devName || (rawDev.charAt(0).toUpperCase() + rawDev.slice(1));
+    // Clean actor ID: if rawDev is empty or 'developer', derive from email or hostname
+    let cleanHandle = rawDev.toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    if ((!cleanHandle || cleanHandle === 'developer') && devEmail && devEmail.includes('@')) {
+      cleanHandle = devEmail.split('@')[0].toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    }
+    const actorId = cleanHandle || 'engineer';
+
+    let displayName = devName;
+    if (!displayName || displayName.toLowerCase() === 'developer') {
+      if (devEmail && devEmail.includes('@')) {
+        displayName = devEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      } else {
+        displayName = actorId.charAt(0).toUpperCase() + actorId.slice(1);
+      }
+    }
+
     const actorEmail = devEmail || `${actorId}@${tenantId.replace(/[^a-z0-9.-]/gi, '').toLowerCase() || 'company.internal'}`;
+
+    let deviceLabel = `${hostname} (workstation)`;
+    if (hostname.includes('.') || hostname.includes('localhost') || hostname.includes('vercel.app')) {
+      deviceLabel = `Silica Web (${hostname})`;
+    }
+
+    // CHECK IF ACTOR IS REVOKED IN DYNAMODB
+    if (client) {
+      try {
+        const revCheck = await client.send(new GetItemCommand({
+          TableName: DATA_TABLE,
+          Key: {
+            PK: { S: 'CHECKMATE#REVOKED' },
+            SK: { S: actorId }
+          }
+        }));
+        if (revCheck && revCheck.Item) {
+          // Record DENY decision in DynamoDB
+          const decCmd = new PutItemCommand({
+            TableName: DATA_TABLE,
+            Item: {
+              PK: { S: 'CHECKMATE#DECISIONS' },
+              SK: { S: `DEC#${Date.now()}#${requestId}` },
+              requestId: { S: requestId },
+              time: { S: now },
+              actor: { S: actorId },
+              asset: { S: workspace },
+              mode: { S: 'WORKSPACE_ACCESS' },
+              decision: { S: 'DENY' },
+              tenantId: { S: tenantId },
+              hostname: { S: hostname }
+            }
+          });
+          await client.send(decCmd);
+
+          return res.status(403).json({
+            ok: false,
+            status: 'REVOKED',
+            error: 'BLOCKED: revoked device access attempt · identity_disabled at verification'
+          });
+        }
+      } catch (revErr) {
+        console.warn('Revocation verification check error:', revErr.message);
+      }
+    }
 
     const actorData = {
       id: actorId,
@@ -119,7 +177,7 @@ module.exports = async function handler(req, res) {
       role: 'developer',
       region: 'us-east-1',
       email: actorEmail,
-      devices: `${hostname} (workstation)`,
+      devices: deviceLabel,
       status: 'trusted',
       since: dateStr,
       last: `${timeStr} UTC (active)`
