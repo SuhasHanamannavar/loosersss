@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Checkmate · Overview</title>
   <meta name="description" content="Checkmate control plane overview: identity health, recent verified decisions, engine status and containment scenarios.">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/css/console.css">
   <link rel="stylesheet" href="assets/css/app.css">
@@ -23,7 +26,7 @@
     </div>
     <div class="side-group">
       <p class="side-label">Protect</p>
-      <a class="side-item" data-nav="identities.html" href="identities.html"><span data-icon="users"></span>Identities<span class="count" id="sideIdentityCount"></span></a>
+      <a class="side-item" data-nav="identities.html" href="identities.html"><span data-icon="users"></span>Identities<span class="count" id="sideIdentityCount" style="display:none"></span></a>
       <a class="side-item" data-nav="assets.html" href="assets.html"><span data-icon="file"></span>Protected assets</a>
       <a class="side-item" data-nav="killswitch.html" href="killswitch.html"><span data-icon="bolt"></span>Killswitch</a>
     </div>
@@ -173,6 +176,6 @@
   </div>
 </div>
 <div class="toast" role="status"></div>
-<script src="assets/js/app.js"></script>
+<script src="assets/js/checkmate.js?v=2.6.0"></script>
 </body>
 </html>

@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Checkmate · Control Plane Authentication</title>
   <meta name="description" content="Sign in to the Checkmate control plane with AWS DynamoDB credentials.">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/css/console.css">
   <style>
@@ -293,7 +296,11 @@
           time: Date.now()
         }));
         setTimeout(function () {
-          window.location.replace(redirectTarget);
+          var dest = redirectTarget;
+          if (dest.indexOf("activate=1") === -1) {
+            dest += (dest.indexOf("?") === -1 ? "?activate=1" : "&activate=1");
+          }
+          window.location.replace(dest);
         }, 500);
         return;
       } else {
@@ -313,7 +320,11 @@
           time: Date.now()
         }));
         setTimeout(function () {
-          window.location.replace(redirectTarget);
+          var dest = redirectTarget;
+          if (dest.indexOf("activate=1") === -1) {
+            dest += (dest.indexOf("?") === -1 ? "?activate=1" : "&activate=1");
+          }
+          window.location.replace(dest);
         }, 500);
         return;
       }
