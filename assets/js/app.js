@@ -10,11 +10,15 @@
     authSession = JSON.parse(localStorage.getItem("cm_auth_session") || sessionStorage.getItem("cm_auth_session") || "null");
   } catch (e) {}
 
-  var currentPath = (location.pathname.split("/").pop() || "console.html").toLowerCase();
-  var isPublicPage = currentPath === "login.html" || currentPath === "index.html" || currentPath === "404.html";
+  var rawSegments = location.pathname.split("/").filter(Boolean);
+  var currentPath = (rawSegments.pop() || "console.html").toLowerCase();
+  var isPublicPage = currentPath === "login.html" || currentPath === "login" ||
+                     currentPath === "index.html" || currentPath === "index" ||
+                     currentPath === "" || currentPath === "404.html" || currentPath === "404";
 
   if (!isPublicPage && (!authSession || !authSession.email)) {
-    window.location.replace("login.html?redirect=" + encodeURIComponent(currentPath));
+    var targetPage = (currentPath.indexOf(".") === -1 ? currentPath + ".html" : currentPath);
+    window.location.replace("login.html?redirect=" + encodeURIComponent(targetPage));
     return;
   }
 

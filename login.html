@@ -251,6 +251,9 @@
 
   var params = new URLSearchParams(window.location.search);
   var redirectTarget = params.get("redirect") || "console.html";
+  if (redirectTarget === "login" || redirectTarget === "login.html") {
+    redirectTarget = "console.html";
+  }
 
   // If already authenticated, redirect straight to console
   try {
