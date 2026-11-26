@@ -13,7 +13,7 @@
 <div class="app-shell">
   <aside class="side" id="side">
     <a class="side-brand" href="console.html"><span class="mark" data-icon="king"></span><span class="word">CHECKMATE</span></a>
-    <button class="side-org" type="button"><span data-icon="building"></span>org_silica<span class="chev" data-icon="chevron-down"></span></button>
+    <button class="side-org" type="button"><span data-icon="building"></span>No workspace<span class="chev" data-icon="chevron-down"></span></button>
     <p class="side-org-note">Multi-tenant · API keys and rosters isolated per organization</p>
     <div class="side-group">
       <p class="side-label">Monitor</p>
@@ -43,7 +43,7 @@
       </div>
       <div class="side-links">
         <a class="side-link" href="index.html"><span data-icon="external"></span>Field book</a>
-        <a class="side-link" href="settings.html"><span data-icon="refresh"></span>Reset demo state</a>
+        <a class="side-link" href="settings.html"><span data-icon="refresh"></span>Reset local state</a>
       </div>
     </div>
   </aside>
@@ -55,8 +55,8 @@
       <label class="gsearch"><span data-icon="search"></span><input type="text" placeholder="Search identities, assets, request IDs…" aria-label="Search"><kbd>⌘K</kbd></label>
       <div class="top-right">
         <div class="env-seg"><button class="active" type="button">Production</button><button type="button">Test</button></div>
-        <span class="sync-status"><span class="dot"></span>sync · checkmate-guard.vercel.app</span>
-        <span class="avatar">AS</span>
+        <span class="sync-status"><span class="dot"></span>offline · control plane not connected</span>
+        <span class="avatar" data-icon="user" aria-label="Account"></span>
       </div>
     </header>
 
@@ -68,8 +68,8 @@
           <p class="sub">Every verification indexed by request_id: timestamp, actor, asset, mode and enforced rule. Denied records carry a non-disclosure flag — no secret bytes are ever returned.</p>
         </div>
         <div class="actions">
-          <button class="btn-outline" id="exportJson"><span data-icon="download"></span> Export JSON</button>
-          <button class="btn-outline" id="exportCsv"><span data-icon="download"></span> Export CSV</button>
+          <button class="btn-outline" disabled id="exportJson"><span data-icon="download"></span> Export JSON</button>
+          <button class="btn-outline" disabled id="exportCsv"><span data-icon="download"></span> Export CSV</button>
         </div>
       </div>
 
@@ -108,10 +108,10 @@
           </div>
           <label class="field-label" for="auditQuery">Request id lookup</label>
           <div style="display:flex; gap:10px; flex-wrap:wrap">
-            <input class="text-input" id="auditQuery" placeholder="e.g. req-9f31c2" style="max-width:240px">
+            <input class="text-input" id="auditQuery" placeholder="Request id" style="max-width:240px">
             <button class="btn-ghost" id="auditSearch"><span data-icon="eye"></span> Lookup</button>
           </div>
-          <p class="audit-hint">Sample IDs: req-9f31c2 · req-4b77e0 · req-c2a91d · req-3d91aa</p>
+          <p class="audit-hint">Decision records appear here after the guard verifies requests.</p>
           <div class="audit-result" id="auditResult" style="margin-top:14px; min-height:180px">
             <p class="audit-empty">Lookup a request id to render timestamp, decision, enforced rule and the non-disclosure guarantee.</p>
           </div>

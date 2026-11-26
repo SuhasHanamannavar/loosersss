@@ -1,10 +1,10 @@
-/* CHECKMATE app console — shared shell, demo data, interactions.
-   Static demonstration: no credentials leave the browser; all state lives in
-   localStorage and resets on clear. Mirrors track4_service.py operations:
-   setup / read / revoke / protected_read / audit. */
+/* CHECKMATE app console — shared shell + empty-state views.
+   Static front end: no records, names, request ids or counters are seeded.
+   Every table renders an empty state until the control plane supplies actors,
+   assets, decisions, revocation proofs and API keys. Mirrors
+   track4_service.py operations: setup / read / revoke / protected_read / audit. */
 (function () {
   "use strict";
-
   /* ---------------- icons (inline, no external font) ---------------- */
   var ICONS = {
     king: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3"/><path d="M10.5 4.5h3"/><path d="M5 8.5 7.6 11 12 7.8 16.4 11 19 8.5l-1.8 6.4a2.4 2.4 0 0 1-2.3 1.8H9.1a2.4 2.4 0 0 1-2.3-1.8L5 8.5z"/><path d="M8.6 16.7h6.8l.5 3.3H8.1l.5-3.3z"/></svg>',
@@ -28,11 +28,10 @@
     globe: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.6 2.5 15.4 0 18"/><path d="M12 3c-2.5 2.6-2.5 15.4 0 18"/></svg>',
     copy: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
     "chevron-down": '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
-    "chevron-right": '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
     external: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4L10 14"/><path d="M19 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h6"/></svg>',
     activity: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>',
     trash: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
-    ban: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>',
+    ban: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>',
     file: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',
     building: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v16"/><path d="M15 9h3a1 1 0 0 1 1 1v11"/><path d="M8 7h2M8 11h2M8 15h2"/></svg>',
     refresh: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 3v6h-6"/></svg>',
@@ -41,7 +40,8 @@
     "arrow-right": '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16"/><path d="M14 6l6 6-6 6"/></svg>',
     alert: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20z"/><path d="M12 10v4"/><path d="M12 17h.01"/></svg>',
     filter: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>',
-    plug: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6M15 2v6"/><path d="M6 8h12v3a6 6 0 0 1-12 0z"/><path d="M12 17v5"/></svg>'
+    plug: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6M15 2v6"/><path d="M6 8h12v3a6 6 0 0 1-12 0z"/><path d="M12 17v5"/></svg>',
+    inbox: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l2.5-7.5A2 2 0 0 1 7.4 4h9.2a2 2 0 0 1 1.9 1.5L21 13v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 13h5l1.5 2.5h5L16 13h5"/></svg>'
   };
   function renderIcons(root) {
     (root || document).querySelectorAll("[data-icon]").forEach(function (el) {
@@ -51,27 +51,12 @@
   }
   renderIcons(document);
   window.CMRenderIcons = renderIcons;
-
   /* ---------------- helpers ---------------- */
   function pad(n) { return n < 10 ? "0" + n : "" + n; }
   function localTime(d) { d = d || new Date(); return pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds()); }
   function stamp() { var d = new Date(); return pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()); }
-  function rid() { return "req-" + Math.random().toString(16).slice(2, 8); }
-  function randHex(bytes) {
-    var out = "";
-    try {
-      var a = new Uint8Array(bytes);
-      crypto.getRandomValues(a);
-      for (var i = 0; i < a.length; i++) out += a[i].toString(16).padStart(2, "0");
-    } catch (e) {
-      for (var j = 0; j < bytes * 2; j++) out += "0123456789abcdef"[Math.floor(Math.random() * 16)];
-    }
-    return out;
-  }
-  function shortHex(hex, n) { return hex.slice(0, n) + "…"; }
-  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
   function initials(name) {
-    var parts = name.split(/\s+/);
+    var parts = (name || "").split(/\s+/);
     return ((parts[0] || "")[0] || "") + ((parts[1] || "")[0] || "");
   }
   var toastEl = document.querySelector(".toast");
@@ -83,42 +68,23 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 2600);
   }
-
-  /* ---------------- persisted revocation set (demo) ---------------- */
-  var STORE_KEY = "cm_disabled_v1";
+  /* ---------------- data model: empty until the control plane connects ---------------- */
+  var STORE_KEY = "cm_workspace_v1";
   var disabled = {};
   try { disabled = JSON.parse(localStorage.getItem(STORE_KEY) || "{}") || {}; } catch (e) { disabled = {}; }
-  ["fiona", "grace", "hugo"].forEach(function (id) { disabled[id] = true; });
   function persistDisabled() { try { localStorage.setItem(STORE_KEY, JSON.stringify(disabled)); } catch (e) {} }
 
-  var ACTORS = [
-    { id: "alice", name: "Alice Rao", role: "contract-developer", region: "eu-west", devices: 2, last: "09:41:12", email: "alice@silica.dev", since: "2025-09-02" },
-    { id: "bhargav", name: "Bhargav Kulkarni", role: "platform-engineer", region: "us-east", devices: 1, last: "09:38:02", email: "bhargav@silica.dev", since: "2024-11-18" },
-    { id: "carlos", name: "Carlos Mendez", role: "finance-clerk", region: "eu-west", devices: 1, last: "08:57:44", email: "carlos@silica.dev", since: "2026-01-06" },
-    { id: "dana", name: "Dana Whitfield", role: "security-ops", region: "global", devices: 3, last: "09:42:55", email: "dana@silica.dev", since: "2023-05-30" },
-    { id: "eva", name: "Eva Lindqvist", role: "product-manager", region: "ap-south", devices: 1, last: "09:12:30", email: "eva@silica.dev", since: "2025-03-14" },
-    { id: "fiona", name: "Fiona Osei", role: "data-analyst", region: "eu-west", devices: 1, last: "—", email: "fiona@silica.dev", since: "2024-08-22" },
-    { id: "grace", name: "Grace Tanaka", role: "product-designer", region: "ap-south", devices: 1, last: "—", email: "grace@silica.dev", since: "2025-02-10" },
-    { id: "hugo", name: "Hugo Ferreira", role: "devops-engineer", region: "us-east", devices: 2, last: "—", email: "hugo@silica.dev", since: "2023-12-01" }
-  ];
-  var ASSETS = [
-    { id: "prod-db-credentials", kind: "connection-string", owner: "dana", tier: "pq", policy: "owner_allowed · protected_read", size: "1.2 KB", last: "09:42:10" },
-    { id: "stripe-customer-keys", kind: "api-keys", owner: "dana", tier: "pq", policy: "owner_allowed · protected_read", size: "0.6 KB", last: "09:31:52" },
-    { id: "q4-financial-report", kind: "financial-export", owner: "carlos", tier: "pq", policy: "owner_allowed · protected_read", size: "840 KB", last: "08:55:18" },
-    { id: "app-env-production", kind: "env-file", owner: "alice", tier: "pq", policy: "owner_allowed · protected_read", size: "0.4 KB", last: "09:40:05" },
-    { id: "customer-pii-export", kind: "data-export", owner: "bhargav", tier: "std", policy: "owner_allowed · standard read", size: "2.1 MB", last: "09:14:37" },
-    { id: "k8s-sealed-secret", kind: "workload-secret", owner: "dana", tier: "pq", policy: "owner_allowed · protected_read", size: "0.9 KB", last: "09:22:44" },
-    { id: "vault-seed-note", kind: "seed-note", owner: "alice", tier: "pq", policy: "owner_allowed · protected_read", size: "0.3 KB", last: "07:48:19" },
-    { id: "design-spec-board", kind: "document", owner: "eva", tier: "std", policy: "owner_allowed · standard read", size: "1.8 MB", last: "09:02:11" }
-  ];
-  var REGISTRY = [
-    { actor: "fiona", ts: "11-26 08:14", by: "Automated IDS", proof: "rev_f8a21c" },
-    { actor: "grace", ts: "11-25 21:40", by: "Self-service wipe", proof: "rev_2b77e0" },
-    { actor: "hugo", ts: "11-25 11:03", by: "Admin revoke", proof: "rev_91c4d6" }
-  ];
+  var ACTORS = [];
+  var ASSETS = [];
+  var REGISTRY = [];
+  var AUDIT = [];
+  var KEYS = [];
 
   function actorById(id) { return ACTORS.find(function (a) { return a.id === id; }); }
-
+  function emptyRow(colspan, icon, title, hint, extraAttrs) {
+    return '<tr' + (extraAttrs || "") + '><td colspan="' + colspan + '"><div class="empty">' +
+      '<span data-icon="' + icon + '"></span><h4>' + title + "</h4><p>" + hint + "</p></div></td>";
+  }
   /* ---------------- shell: nav, sidebar, tabs, modals, copy ---------------- */
   var here = (location.pathname.split("/").pop() || "console.html").toLowerCase();
   document.querySelectorAll(".side-item[data-nav]").forEach(function (a) {
@@ -132,7 +98,6 @@
     side.classList.toggle("open"); scrim.classList.toggle("open");
   });
   if (scrim) scrim.addEventListener("click", closeSide);
-
   document.querySelectorAll("[data-tabs]").forEach(function (group) {
     var btns = group.querySelectorAll("[data-tab]");
     btns.forEach(function (b) {
@@ -147,14 +112,13 @@
       });
     });
   });
-
   document.querySelectorAll("[data-modal-open]").forEach(function (btn) {
     btn.addEventListener("click", function () {
       var id = btn.getAttribute("data-modal-open");
       var backdrop = document.getElementById(id + "-backdrop");
       var modal = document.getElementById(id);
-      if (!modal) return;
-      backdrop && backdrop.classList.add("open");
+      if (!backdrop || !modal) return;
+      backdrop.classList.add("open");
       modal.classList.add("open");
       document.body.style.overflow = "hidden";
     });
@@ -185,7 +149,6 @@
       closeSide();
     }
   });
-
   document.querySelectorAll("[data-copy]").forEach(function (b) {
     b.addEventListener("click", function () {
       var target = b.getAttribute("data-copy-target");
@@ -195,26 +158,32 @@
       toast("Copied to clipboard");
     });
   });
-
   /* ---------------- Identities page ---------------- */
   var identityBody = document.getElementById("identityRows");
   function renderIdentities(filter) {
     if (!identityBody) return;
     filter = (filter || "all").toLowerCase();
-    identityBody.innerHTML = ACTORS.map(function (a) {
+    var rows = ACTORS.filter(function (a) {
       var locked = !!disabled[a.id];
-      if (filter === "trusted" && locked) return "";
-      if (filter === "locked" && !locked) return "";
+      if (filter === "trusted" && locked) return false;
+      if (filter === "locked" && !locked) return false;
+      return true;
+    });
+    if (!rows.length) {
+      identityBody.innerHTML = emptyRow(7, "users", "No identities yet", "Provisioned actors appear here after the control plane connects.");
+      renderIcons(identityBody);
+      return;
+    }
+    identityBody.innerHTML = rows.map(function (a) {
+      var locked = !!disabled[a.id];
       var status = locked
         ? '<span class="badge lock">Locked</span>'
         : '<span class="badge allow">Trusted</span>';
       var last = locked
         ? '<span class="sub mono">revoked · no session</span>'
         : '<span class="mono sub">' + a.last + "</span>";
-      var actions = locked
-        ? '<button class="row-btn" data-detail="' + a.id + '">Profile</button>'
-        : '<button class="row-btn" data-detail="' + a.id + '">Profile</button>' +
-          '<button class="row-btn danger" data-revoke="' + a.id + '">Revoke</button>';
+      var actions = '<button class="row-btn" data-detail="' + a.id + '">Profile</button>' +
+        (locked ? "" : '<button class="row-btn danger" data-revoke="' + a.id + '">Revoke</button>');
       return '<tr data-status="' + (locked ? "locked" : "trusted") + '" data-search="' + (a.name + " " + a.id + " " + a.role + " " + a.region).toLowerCase() + '">' +
         '<td><div class="cell-main"><span class="avatar tiny">' + initials(a.name) + '</span>' +
         '<span class="meta"><span class="name">' + a.name + '</span><span class="handle">@' + a.id + "</span></span></div></td>" +
@@ -244,7 +213,6 @@
     renderIcons(identityBody);
   }
   renderIdentities();
-
   function openIdentityDetail(id) {
     var a = actorById(id); if (!a) return;
     var locked = !!disabled[id];
@@ -261,7 +229,7 @@
       "</div>" +
       '<div style="margin-top:16px"><span class="field-label">Protected assets held</span><table class="tbl"><tbody>' +
       ASSETS.filter(function (x) { return x.owner === id; }).map(function (x) {
-        return "<tr><td class='mono'>" + x.id + "</td><td class='sub'>" + x.policy + "</td></tr>";
+        return "<tr><td class='mono'>" + x.id + "</td><td class='sub mono'>" + x.policy + "</td></tr>";
       }).join("") +
       "</tbody></table></div>";
     document.getElementById("identityModal-backdrop").classList.add("open");
@@ -285,8 +253,6 @@
     rm.classList.add("open");
     document.body.style.overflow = "hidden";
   });
-
-  /* identity filter tabs + search */
   document.querySelectorAll("[data-identity-filter]").forEach(function (tab) {
     tab.addEventListener("click", function () {
       document.querySelectorAll("[data-identity-filter]").forEach(function (t) { t.classList.remove("active"); });
@@ -301,11 +267,20 @@
       tr.style.display = !q || (tr.getAttribute("data-search") || "").indexOf(q) >= 0 ? "" : "none";
     });
   });
-
+  var provisionBtn = document.getElementById("provisionBtn");
+  if (provisionBtn) provisionBtn.addEventListener("click", function () {
+    closeModal(document.getElementById("provisionModal-backdrop"), document.getElementById("provisionModal"));
+    toast("Control plane not connected — identities are provisioned server-side");
+  });
   /* ---------------- Assets page ---------------- */
   var assetBody = document.getElementById("assetRows");
   function renderAssets() {
     if (!assetBody) return;
+    if (!ASSETS.length) {
+      assetBody.innerHTML = emptyRow(6, "file", "No protected assets yet", "Sealed envelopes appear here once the guard registers assets.", 'data-tier="all"');
+      renderIcons(assetBody);
+      return;
+    }
     assetBody.innerHTML = ASSETS.map(function (a) {
       var tier = a.tier === "pq"
         ? '<span class="badge pq">PQ · ML-KEM-768</span>'
@@ -321,9 +296,9 @@
         '<td class="mono sub">' + a.last + "</td>" +
         '<td><div class="row-actions"><button class="row-btn" data-asset-inspect="' + a.id + '">Inspect</button></div></td></tr>';
     }).join("");
+    renderIcons(assetBody);
   }
   renderAssets();
-  if (assetBody) renderIcons(assetBody);
   var assetSearch = document.getElementById("assetSearch");
   if (assetSearch) assetSearch.addEventListener("input", function () {
     var q = assetSearch.value.trim().toLowerCase();
@@ -343,49 +318,50 @@
   });
   if (assetBody) assetBody.addEventListener("click", function (e) {
     var b = e.target.closest("[data-asset-inspect]");
-    if (b) toast("Inspect in the PQC security page · demo shortcut");
+    if (b) toast("Open the PQC security page to inspect envelopes");
   });
   var protectForm = document.getElementById("protectForm");
   if (protectForm) protectForm.addEventListener("submit", function (e) {
     e.preventDefault();
-    var id = (document.getElementById("newAssetId") || {}).value || "asset-" + randHex(3).slice(0, 6);
-    ASSETS.unshift({ id: id, kind: "protected-file", owner: "dana", tier: "pq", policy: "owner_allowed · protected_read", size: "new envelope", last: localTime() });
-    renderAssets();
     closeModal(document.getElementById("protectModal-backdrop"), document.getElementById("protectModal"));
-    toast("Envelope sealed · protected_read required");
+    toast("Control plane not connected — envelopes are sealed server-side");
   });
-
   /* ---------------- Revocation (shared by killswitch + identities) ---------------- */
   function revokeActor(id, reason, byLabel) {
+    if (!id) return;
     if (!disabled[id]) {
       disabled[id] = true;
       persistDisabled();
-      REGISTRY.unshift({ actor: id, ts: stamp(), by: byLabel || ("Admin revoke · " + reason), proof: "rev_" + randHex(3).slice(0, 6) });
+      REGISTRY.unshift({ actor: id, ts: stamp(), by: byLabel || ("Admin revoke · " + reason), proof: "" });
     }
     renderIdentities(currentIdentityFilter());
     renderRegistry();
     renderOverviewRows();
     var countEl = document.getElementById("sideIdentityCount");
     if (countEl) countEl.textContent = ACTORS.filter(function (a) { return !disabled[a.id]; }).length;
-    toast(id + " · identity_disabled committed · 0.0 ms propagation");
+    toast(id + " · identity_disabled committed");
   }
   window.CM = { revokeActor: revokeActor, disabled: disabled };
   function currentIdentityFilter() {
     var active = document.querySelector("[data-identity-filter].active");
     return active ? active.getAttribute("data-identity-filter") : "all";
   }
-
   var registryBody = document.getElementById("registryRows");
   function renderRegistry() {
     if (!registryBody) return;
+    if (!REGISTRY.length) {
+      registryBody.innerHTML = emptyRow(5, "lock", "Disabled registry is empty", "Signed revocation proofs appear here when an actor is revoked.");
+      renderIcons(registryBody);
+      return;
+    }
     registryBody.innerHTML = REGISTRY.map(function (r) {
       return "<tr><td class='mono'>" + r.actor + "</td><td class='mono sub'>" + r.ts +
-        "</td><td class='sub'>" + r.by + "</td><td class='mono sub' style='font-size:11px'>" + r.proof +
+        "</td><td class='sub'>" + r.by + "</td><td class='mono sub' style='font-size:11px'>" + (r.proof || "—") +
         "</td><td><span class='badge lock'>Locked</span></td></tr>";
     }).join("");
+    renderIcons(registryBody);
   }
   renderRegistry();
-
   var propValue = document.getElementById("propValue");
   var propNote = document.getElementById("propNote");
   function runPropagation(cb) {
@@ -404,80 +380,59 @@
     requestAnimationFrame(frame);
   }
   var wizardSelect = document.getElementById("actorSelect");
-  if (wizardSelect && !wizardSelect.options.length) {
+  function refreshWizardSelect() {
+    if (!wizardSelect || !ACTORS.length) return;
     wizardSelect.innerHTML = ACTORS.filter(function (a) { return !disabled[a.id]; }).map(function (a) {
       return '<option value="' + a.id + '">' + a.id + " · " + a.role + " · " + a.region + "</option>";
     }).join("");
   }
+  refreshWizardSelect();
   var killswitchBtn = document.getElementById("revokeBtn");
   if (killswitchBtn) killswitchBtn.addEventListener("click", function () {
     var sel = document.getElementById("actorSelect");
-    var id = sel ? sel.value : "alice";
+    var id = sel ? sel.value : "";
+    if (!id) { toast("No identity available to revoke — connect the control plane"); return; }
     var reasonEl = document.querySelector('input[name="reason"]:checked');
     var reason = reasonEl ? reasonEl.value : "Stolen laptop";
     runPropagation(function () {
       revokeActor(id, reason, "Admin revoke · " + reason);
-      if (propNote) propNote.textContent = id + " · identity_disabled committed at " + localTime() + " · key material zeroized in volatile memory";
+      if (propNote) propNote.textContent = id + " · identity_disabled committed at " + localTime();
     });
   });
   var confirmRevoke = document.getElementById("confirmRevokeBtn");
   if (confirmRevoke) confirmRevoke.addEventListener("click", function () {
     var sel = document.getElementById("revokeActorSelect");
-    var id = sel ? sel.value : "alice";
+    var id = sel ? sel.value : "";
+    if (!id) { toast("No identity available to revoke — connect the control plane"); return; }
     var reasonEl = document.querySelector('input[name="mreason"]:checked');
     var reason = reasonEl ? reasonEl.value : "Stolen laptop";
     closeModal(document.getElementById("revokeModal-backdrop"), document.getElementById("revokeModal"));
     runPropagation(function () { revokeActor(id, reason, "Admin revoke · " + reason); });
   });
   var revokeModalSelect = document.getElementById("revokeActorSelect");
-  if (revokeModalSelect && !revokeModalSelect.options.length) {
+  if (revokeModalSelect && ACTORS.length) {
     revokeModalSelect.innerHTML = ACTORS.map(function (a) {
       return '<option value="' + a.id + '"' + (disabled[a.id] ? " disabled" : "") + ">" + a.id + " · " + a.role + (disabled[a.id] ? " · locked" : "") + "</option>";
     }).join("");
   }
-
   /* ---------------- Logs page (stream + audit) ---------------- */
   var logBody = document.getElementById("logRows");
   var blockNote = document.getElementById("blockNote");
-  function addLogRow(initial) {
+  function renderStream() {
     if (!logBody) return;
-    var actor = pick(ACTORS).id;
-    var asset = pick(ASSETS).id;
-    var pq = Math.random() < 0.34;
-    var isDisabled = !!disabled[actor];
-    var deny = isDisabled || (!initial && Math.random() < 0.08);
-    var mode = pq ? '<span class="badge pq">protected_read</span>' : '<span class="badge std">read</span>';
-    var decision = deny ? '<span class="badge deny">DENY</span>' : '<span class="badge allow">ALLOW</span>';
-    var tr = document.createElement("tr");
-    tr.setAttribute("data-decision", deny ? "deny" : "allow");
-    tr.setAttribute("data-mode", pq ? "protected_read" : "read");
-    tr.setAttribute("data-actor", actor);
-    if (isDisabled) tr.className = "row-blocked";
-    tr.innerHTML =
-      '<td class="mono sub">' + localTime() + "</td>" +
-      '<td class="mono sub">' + rid() + "</td>" +
-      '<td class="mono">' + actor + "</td>" +
-      '<td class="sub">' + asset + "</td>" +
-      "<td>" + mode + "</td>" +
-      "<td>" + decision + "</td>";
-    logBody.prepend(tr);
-    while (logBody.rows.length > 20) logBody.deleteRow(-1);
-    if (isDisabled && blockNote) {
-      blockNote.hidden = false;
-      blockNote.textContent = "BLOCKED: revoked device access attempt · " + actor + " · identity_disabled at verification";
+    if (!logBody.querySelector("tr:not(.empty-row)") || !logBody.rows.length) {
+      logBody.innerHTML = emptyRow(6, "server", "No decisions yet", "Verified requests stream here as the guard checks identities.", 'data-decision="all" class="empty-row"');
+      renderIcons(logBody);
     }
   }
-  if (logBody) {
-    for (var i = 0; i < 8; i++) addLogRow(true);
-    setInterval(function () { addLogRow(false); }, 2600);
-  }
+  renderStream();
   document.querySelectorAll("[data-log-filter]").forEach(function (tab) {
     tab.addEventListener("click", function () {
       document.querySelectorAll("[data-log-filter]").forEach(function (t) { t.classList.remove("active"); });
       tab.classList.add("active");
       var f = tab.getAttribute("data-log-filter");
       logBody.querySelectorAll("tr").forEach(function (tr) {
-        tr.style.display = f === "all" || tr.getAttribute("data-decision") === f ? "" : "none";
+        tr.style.display = f === "all" || tr.getAttribute("data-decision") === f || tr.classList.contains("empty-row") ? "" : "none";
       });
     });
   });
@@ -485,26 +440,16 @@
   if (logSearch) logSearch.addEventListener("input", function () {
     var q = logSearch.value.trim().toLowerCase();
     logBody.querySelectorAll("tr").forEach(function (tr) {
+      if (tr.classList.contains("empty-row")) { tr.style.display = ""; return; }
       tr.style.display = !q || tr.textContent.toLowerCase().indexOf(q) >= 0 ? "" : "none";
     });
   });
-
-  var AUDIT = [
-    { id: "req-9f31c2", ts: "2026-11-26T09:42:10Z", actor: "dana", asset: "prod-db-credentials", mode: "protected_read", decision: "allow", rule: "owner_allowed", nd: true },
-    { id: "req-4b77e0", ts: "2026-11-26T08:14:02Z", actor: "fiona", asset: "prod-db-credentials", mode: "read", decision: "deny", rule: "identity_disabled", nd: true },
-    { id: "req-c2a91d", ts: "2026-11-26T09:11:58Z", actor: "carlos", asset: "customer-pii-export", mode: "read", decision: "deny", rule: "owner_mismatch", nd: true },
-    { id: "req-77e0bf", ts: "2026-11-26T07:48:19Z", actor: "alice", asset: "vault-seed-note", mode: "protected_read", decision: "allow", rule: "owner_allowed", nd: true },
-    { id: "req-3d91aa", ts: "2026-11-26T09:31:52Z", actor: "dana", asset: "stripe-customer-keys", mode: "protected_read", decision: "allow", rule: "owner_allowed", nd: true },
-    { id: "req-88c04e", ts: "2026-11-26T09:02:11Z", actor: "hugo", asset: "k8s-sealed-secret", mode: "protected_read", decision: "deny", rule: "identity_disabled", nd: true },
-    { id: "req-51ab77", ts: "2026-11-26T08:55:18Z", actor: "carlos", asset: "q4-financial-report", mode: "protected_read", decision: "allow", rule: "owner_allowed", nd: true },
-    { id: "req-e02cd9", ts: "2026-11-26T09:22:44Z", actor: "bhargav", asset: "k8s-sealed-secret", mode: "read", decision: "deny", rule: "owner_mismatch", nd: true }
-  ];
   var auditResult = document.getElementById("auditResult");
   function badgeFor(d) { return d === "allow" ? '<span class="badge allow">ALLOW</span>' : '<span class="badge deny">DENY</span>'; }
   function renderAudit(rec) {
     if (!auditResult) return;
     if (!rec) {
-      auditResult.innerHTML = '<p class="audit-empty">No record matches that request ID. Sample IDs: req-9f31c2 · req-4b77e0 · req-c2a91d · req-3d91aa.</p>';
+      auditResult.innerHTML = '<p class="audit-empty">No record matches that request id. Decision evidence appears here after the guard verifies requests.</p>';
       return;
     }
     var modeBadge = rec.mode === "protected_read" ? '<span class="badge pq">protected_read</span>' : '<span class="badge std">read</span>';
@@ -541,11 +486,13 @@
   }
   var exportJson = document.getElementById("exportJson");
   if (exportJson) exportJson.addEventListener("click", function () {
+    if (!AUDIT.length) { toast("No audit records to export"); return; }
     download("checkmate-audit.json", JSON.stringify(AUDIT, null, 2), "application/json");
     toast("Audit pack exported · JSON");
   });
   var exportCsv = document.getElementById("exportCsv");
   if (exportCsv) exportCsv.addEventListener("click", function () {
+    if (!AUDIT.length) { toast("No audit records to export"); return; }
     var head = "request_id,timestamp,actor,asset,mode,decision,rule,non_disclosure";
     var lines = AUDIT.map(function (r) {
       return [r.id, r.ts, r.actor, r.asset, r.mode, r.decision, r.rule, r.nd ? "verified" : "n/a"].join(",");
@@ -553,43 +500,21 @@
     download("checkmate-audit.csv", head + "\n" + lines.join("\n"), "text/csv");
     toast("Audit pack exported · CSV");
   });
-
-  /* ---------------- Security page · KEM demo ---------------- */
-  var pubKeyBox = document.getElementById("pubKeyBox");
-  if (pubKeyBox) pubKeyBox.textContent = randHex(1184);
+  /* ---------------- Security page · inspector ---------------- */
   var kemRun = document.getElementById("kemRun");
-  var verifyLine = document.getElementById("verifyLine");
-  function setVerify(ok, actor, rule) {
-    if (!verifyLine) return;
-    verifyLine.innerHTML = ok
-      ? '<span data-icon="check"></span> proof verified · ' + rule + " · " + actor
-      : '<span class="ico" style="color:var(--danger)"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span> denied · ' + rule + " · " + actor;
-  }
-  if (kemRun) kemRun.addEventListener("click", async function () {
-    var actor = "dana";
-    var disabledActor = !!disabled[actor];
-    var ct = randHex(1088), ss = randHex(32), nonce = randHex(12), proof = randHex(32);
-    try {
-      if (window.crypto && crypto.subtle) {
-        var key = await crypto.subtle.importKey("raw", new TextEncoder().encode(ss), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-        var sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(nonce + "::" + actor));
-        proof = Array.from(new Uint8Array(sig)).map(function (b) { return b.toString(16).padStart(2, "0"); }).join("");
-      }
-    } catch (e) {}
-    var outCt = document.getElementById("outCt"), outSs = document.getElementById("outSs"), outNonce = document.getElementById("outNonce"), outProof = document.getElementById("outProof");
-    if (outCt) outCt.textContent = shortHex(ct, 88) + " (1088 B)";
-    if (outSs) outSs.textContent = shortHex(ss, 44) + " (32 B)";
-    if (outNonce) outNonce.textContent = shortHex(nonce, 36) + " (12 B)";
-    if (outProof) outProof.textContent = proof;
-    setVerify(!disabledActor, actor, disabledActor ? "identity_disabled" : "owner_allowed");
+  if (kemRun) kemRun.addEventListener("click", function () {
+    toast("Control plane not connected — encapsulation runs server-side");
   });
-
   /* ---------------- Overview page ---------------- */
   var overviewRows = document.getElementById("overviewRows");
   function renderOverviewRows() {
     if (!overviewRows) return;
-    var recent = AUDIT.slice(0, 5);
-    overviewRows.innerHTML = recent.map(function (r) {
+    if (!AUDIT.length) {
+      overviewRows.innerHTML = emptyRow(6, "activity", "No recent decisions", "Authorized and denied requests appear here after the first verification.");
+      renderIcons(overviewRows);
+      return;
+    }
+    overviewRows.innerHTML = AUDIT.slice(0, 5).map(function (r) {
       return "<tr data-decision='" + r.decision + "'>" +
         '<td class="mono sub">' + r.ts.replace("T", " ").replace("Z", "") + "</td>" +
         '<td class="mono sub">' + r.id + "</td>" +
@@ -598,30 +523,18 @@
         (r.mode === "protected_read" ? '<td><span class="badge pq">PQ</span></td>' : '<td><span class="badge std">read</span></td>') +
         "<td>" + badgeFor(r.decision) + "</td></tr>";
     }).join("");
+    renderIcons(overviewRows);
   }
   renderOverviewRows();
-  document.querySelectorAll("[data-count]").forEach(function (el) {
-    var target = parseInt(el.getAttribute("data-count"), 10) || 0;
-    var dur = 1200, start = null;
-    function frame(ts) {
-      if (!start) start = ts;
-      var p = Math.min((ts - start) / dur, 1);
-      var eased = 1 - Math.pow(1 - p, 3);
-      el.textContent = Math.round(target * eased).toLocaleString();
-      if (p < 1) requestAnimationFrame(frame);
-    }
-    requestAnimationFrame(frame);
-  });
-
   /* ---------------- Integrations · API keys ---------------- */
-  var KEYS = [
-    { prefix: "ck_live_9f31…", name: "production-server", scope: "read · protected_read · revoke", created: "2026-10-02", last: "09:42 today" },
-    { prefix: "ck_live_b77e…", name: "ci-pipeline", scope: "read", created: "2026-08-19", last: "yesterday" },
-    { prefix: "ck_test_4c02…", name: "sandbox-local", scope: "read · protected_read", created: "2026-11-01", last: "08:11 today" }
-  ];
   var keyBody = document.getElementById("keyRows");
   function renderKeys() {
     if (!keyBody) return;
+    if (!KEYS.length) {
+      keyBody.innerHTML = emptyRow(5, "key", "No API keys", "Create a scoped control-plane key after connecting the workspace.");
+      renderIcons(keyBody);
+      return;
+    }
     keyBody.innerHTML = KEYS.map(function (k, i) {
       return "<tr>" +
         '<td><div class="cell-main"><span class="avatar tiny" style="background:var(--fill);color:var(--ink)"><span data-icon="key"></span></span>' +
@@ -635,35 +548,26 @@
       b.addEventListener("click", function () {
         KEYS.splice(+b.getAttribute("data-key-revoke"), 1);
         renderKeys();
-        if (keyBody) renderIcons(keyBody);
         toast("API key revoked · registry updated");
       });
     });
-    if (keyBody) renderIcons(keyBody);
+    renderIcons(keyBody);
   }
   renderKeys();
   var keyGenBtn = document.getElementById("generateKeyBtn");
   if (keyGenBtn) keyGenBtn.addEventListener("click", function () {
-    var env = document.getElementById("keyEnv") ? document.getElementById("keyEnv").value : "live";
-    var keyVal = "ck_" + env + "_" + randHex(24);
-    var reveal = document.getElementById("keyReveal");
-    if (!reveal) return;
-    reveal.hidden = false;
-    reveal.style.display = "flex";
-    reveal.querySelector(".key-value").textContent = keyVal;
-    toast("Key generated · copy it now; it is not shown again");
+    toast("Control plane not connected — keys are issued server-side");
   });
   var sideCount = document.getElementById("sideIdentityCount");
-  if (sideCount) sideCount.textContent = ACTORS.filter(function (a) { return !disabled[a.id]; }).length;
-
-  /* ---------------- Settings demo buttons ---------------- */
-  document.querySelectorAll("[data-demo-toast]").forEach(function (b) {
-    b.addEventListener("click", function () { toast(b.getAttribute("data-demo-toast")); });
+  if (sideCount) sideCount.textContent = "0";
+  /* ---------------- Settings actions ---------------- */
+  document.querySelectorAll("[data-toast]").forEach(function (b) {
+    b.addEventListener("click", function () { toast(b.getAttribute("data-toast")); });
   });
-  var resetDemoBtn = document.getElementById("resetDemoBtn");
-  if (resetDemoBtn) resetDemoBtn.addEventListener("click", function () {
+  var resetLocalBtn = document.getElementById("resetLocalBtn");
+  if (resetLocalBtn) resetLocalBtn.addEventListener("click", function () {
     try { localStorage.removeItem(STORE_KEY); } catch (e) {}
-    toast("Demonstration state reset · reloading");
-    setTimeout(function () { location.reload(); }, 700);
+    disabled = {};
+    toast("Local workspace state cleared");
   });
 })();

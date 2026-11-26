@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Checkmate · Settings</title>
-  <meta name="description" content="Organization tenants, team roster, engine configuration, audit retention and the demonstration danger zone.">
+  <meta name="description" content="Organization tenants, team roster, engine configuration, audit retention and the containment danger zone.">
   <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/css/console.css">
   <link rel="stylesheet" href="assets/css/app.css">
@@ -13,7 +13,7 @@
 <div class="app-shell">
   <aside class="side" id="side">
     <a class="side-brand" href="console.html"><span class="mark" data-icon="king"></span><span class="word">CHECKMATE</span></a>
-    <button class="side-org" type="button"><span data-icon="building"></span>org_silica<span class="chev" data-icon="chevron-down"></span></button>
+    <button class="side-org" type="button"><span data-icon="building"></span>No workspace<span class="chev" data-icon="chevron-down"></span></button>
     <p class="side-org-note">Multi-tenant · API keys and rosters isolated per organization</p>
     <div class="side-group">
       <p class="side-label">Monitor</p>
@@ -43,7 +43,7 @@
       </div>
       <div class="side-links">
         <a class="side-link" href="index.html"><span data-icon="external"></span>Field book</a>
-        <a class="side-link" href="settings.html"><span data-icon="refresh"></span>Reset demo state</a>
+        <a class="side-link" href="settings.html"><span data-icon="refresh"></span>Reset local state</a>
       </div>
     </div>
   </aside>
@@ -55,17 +55,17 @@
       <label class="gsearch"><span data-icon="search"></span><input type="text" placeholder="Search identities, assets, request IDs…" aria-label="Search"><kbd>⌘K</kbd></label>
       <div class="top-right">
         <div class="env-seg"><button class="active" type="button">Production</button><button type="button">Test</button></div>
-        <span class="sync-status"><span class="dot"></span>sync · checkmate-guard.vercel.app</span>
-        <span class="avatar">AS</span>
+        <span class="sync-status"><span class="dot"></span>offline · control plane not connected</span>
+        <span class="avatar" data-icon="user" aria-label="Account"></span>
       </div>
     </header>
 
     <main class="page">
       <div class="page-head">
         <div>
-          <span class="mono-tag">Workspace · org_silica</span>
+          <span class="mono-tag">Workspace</span>
           <h1>Settings.</h1>
-          <p class="sub">Tenant isolation, engine parameters, audit retention and containment controls. Demonstration state only; no live credentials are transmitted.</p>
+          <p class="sub">Tenant isolation, engine parameters, audit retention and containment controls. Connect a workspace to load live tenants and team data.</p>
         </div>
       </div>
 
@@ -76,17 +76,16 @@
             <span class="panel-tag">multi-tenant</span>
           </div>
           <div class="fact-grid" style="margin-bottom:16px">
-            <div class="fact"><div class="k">Organization</div><div class="v">org_silica</div></div>
-            <div class="fact"><div class="k">Plan · demo</div><div class="v">SecOps pilot · 15 seats</div></div>
+            <div class="fact"><div class="k">Organization</div><div class="v">not connected</div></div>
+            <div class="fact"><div class="k">Plan</div><div class="v">—</div></div>
             <div class="fact"><div class="k">Control plane</div><div class="v">checkmate-guard.vercel.app</div></div>
-            <div class="fact"><div class="k">Region</div><div class="v">eu-west · us-east · ap-south roster</div></div>
+            <div class="fact"><div class="k">Region</div><div class="v">—</div></div>
           </div>
           <table class="tbl">
             <colgroup><col style="width:26%"><col style="width:22%"><col style="width:24%"><col style="width:28%"></colgroup>
             <thead><tr><th>Tenant</th><th>Identities</th><th>Protected assets</th><th>Isolation</th></tr></thead>
             <tbody>
-              <tr><td class="mono">org_silica</td><td class="sub mono">8 active · 3 locked</td><td class="sub mono">8 envelopes</td><td><span class="badge allow">keys isolated</span></td></tr>
-              <tr><td class="mono">org_company_xyz</td><td class="sub mono">provisioned on demand</td><td class="sub mono">separate vault</td><td><span class="badge std">no shared secrets</span></td></tr>
+              <tr><td colspan="4"><div class="empty"><span data-icon="building"></span><h4>No tenants yet</h4><p>Organization records appear after the control plane connects.</p></div></td></tr>
             </tbody>
           </table>
         </section>
@@ -99,9 +98,7 @@
           <table class="tbl">
             <colgroup><col style="width:68%"><col style="width:32%"></colgroup>
             <tbody>
-              <tr><td><div class="cell-main"><span class="avatar tiny">AS</span><span class="meta"><span class="name">Admin user</span><span class="handle">owner</span></span></div></td><td><span class="badge lock">Admin</span></td></tr>
-              <tr><td><div class="cell-main"><span class="avatar tiny">DW</span><span class="meta"><span class="name">Dana Whitfield</span><span class="handle">security-ops</span></span></div></td><td><span class="badge pq">Ops</span></td></tr>
-              <tr><td><div class="cell-main"><span class="avatar tiny">AR</span><span class="meta"><span class="name">Alice Rao</span><span class="handle">contract-developer</span></span></div></td><td><span class="badge std">Member</span></td></tr>
+              <tr><td colspan="2"><div class="empty"><span data-icon="users"></span><h4>No members yet</h4><p>Workspace members and admins appear after sign-in.</p></div></td></tr>
             </tbody>
           </table>
         </section>
@@ -141,11 +138,11 @@
 
         <section class="danger-panel span-12" aria-label="Danger zone">
           <h3><span data-icon="alert"></span> Danger zone</h3>
-          <p>These actions affect the demonstration model. In production, keypair rotation and bulk revocation require admin approval and leave a signed audit trail.</p>
+          <p>These actions require a connected control plane. Keypair rotation and bulk revocation require admin approval and leave a signed audit trail.</p>
           <div class="danger-actions">
-            <button class="btn-danger-outline" type="button" data-demo-toast="Keypair rotation queued · demo state"><span data-icon="refresh"></span> Rotate ML-KEM keypair</button>
-            <button class="btn-danger-outline" type="button" id="resetDemoBtn"><span data-icon="trash"></span> Reset demonstration state</button>
-            <button class="btn-danger-outline" type="button" data-demo-toast="Bulk revoke requires killswitch approval · demo guard"><span data-icon="ban"></span> Bulk revoke identities</button>
+            <button class="btn-danger-outline" type="button" data-toast="Control plane not connected — rotation runs server-side"><span data-icon="refresh"></span> Rotate ML-KEM keypair</button>
+            <button class="btn-danger-outline" type="button" id="resetLocalBtn"><span data-icon="trash"></span> Clear local state</button>
+            <button class="btn-danger-outline" type="button" data-toast="Bulk revoke runs from the killswitch with admin approval"><span data-icon="ban"></span> Bulk revoke identities</button>
           </div>
         </section>
       </div>

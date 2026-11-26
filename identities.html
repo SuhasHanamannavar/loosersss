@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Checkmate · Identities</title>
-  <meta name="description" content="Identity roster for org_silica: trusted actors, locked identities, per-device verification and one-click revocation.">
+  <meta name="description" content="Identity roster: trusted actors, locked identities, per-device verification and one-click revocation.">
   <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/css/console.css">
   <link rel="stylesheet" href="assets/css/app.css">
@@ -13,7 +13,7 @@
 <div class="app-shell">
   <aside class="side" id="side">
     <a class="side-brand" href="console.html"><span class="mark" data-icon="king"></span><span class="word">CHECKMATE</span></a>
-    <button class="side-org" type="button"><span data-icon="building"></span>org_silica<span class="chev" data-icon="chevron-down"></span></button>
+    <button class="side-org" type="button"><span data-icon="building"></span>No workspace<span class="chev" data-icon="chevron-down"></span></button>
     <p class="side-org-note">Multi-tenant · API keys and rosters isolated per organization</p>
     <div class="side-group">
       <p class="side-label">Monitor</p>
@@ -43,7 +43,7 @@
       </div>
       <div class="side-links">
         <a class="side-link" href="index.html"><span data-icon="external"></span>Field book</a>
-        <a class="side-link" href="settings.html"><span data-icon="refresh"></span>Reset demo state</a>
+        <a class="side-link" href="settings.html"><span data-icon="refresh"></span>Reset local state</a>
       </div>
     </div>
   </aside>
@@ -55,8 +55,8 @@
       <label class="gsearch"><span data-icon="search"></span><input type="text" placeholder="Search identities, assets, request IDs…" aria-label="Search"><kbd>⌘K</kbd></label>
       <div class="top-right">
         <div class="env-seg"><button class="active" type="button">Production</button><button type="button">Test</button></div>
-        <span class="sync-status"><span class="dot"></span>sync · checkmate-guard.vercel.app</span>
-        <span class="avatar">AS</span>
+        <span class="sync-status"><span class="dot"></span>offline · control plane not connected</span>
+        <span class="avatar" data-icon="user" aria-label="Account"></span>
       </div>
     </header>
 
@@ -93,7 +93,7 @@
           <tbody id="identityRows"></tbody>
         </table>
         <div class="dt-foot">
-          <span>Sample roster · demonstration state persisted locally only</span>
+          <span>No identities yet · actors appear after the control plane connects</span>
           <span>setup · read · revoke · protected_read · audit</span>
         </div>
       </div>
@@ -159,9 +159,9 @@
     <button class="modal-close" type="button" data-modal-close data-icon="close" aria-label="Close"></button>
   </div>
   <div class="modal-body">
-    <div class="field"><label for="provName">Display name</label><input id="provName" type="text" placeholder="e.g. Priya Nair"></div>
+    <div class="field"><label for="provName">Display name</label><input id="provName" type="text" placeholder="Full name"></div>
     <div class="field"><label for="provRole">Role</label>
-      <select id="provRole"><option>contract-developer</option><option>platform-engineer</option><option>finance-clerk</option><option>security-ops</option><option>product-manager</option></select>
+      <select id="provRole"><option>developer</option><option>platform</option><option>finance</option><option>security-ops</option><option>product</option></select>
     </div>
     <div class="field"><label for="provRegion">Region</label>
       <select id="provRegion"><option>eu-west</option><option>us-east</option><option>ap-south</option><option>global</option></select>
@@ -169,7 +169,7 @@
   </div>
   <div class="modal-foot">
     <button class="btn-outline" type="button" data-modal-close>Cancel</button>
-    <button class="btn-ghost" type="button" data-demo-toast="Identity provisioned · demo state" data-modal-close><span data-icon="check"></span>Provision</button>
+    <button class="btn-ghost" type="button" id="provisionBtn"><span data-icon="check"></span>Provision</button>
   </div>
 </div>
 

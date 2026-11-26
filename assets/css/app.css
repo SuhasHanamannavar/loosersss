@@ -365,3 +365,9 @@
 }
 .side-link .ico { width: 15px; height: 15px; }
 .side-link:hover { background: var(--fill); color: var(--ink); }
+
+/* ---------- empty table states + disabled controls ---------- */
+td:has(> .empty) { padding: 0; border-bottom: 0; }
+.dt-table .empty, .tbl .empty { border-bottom: 0; }
+.btn-outline:disabled, .btn-solid:disabled, .btn-danger-outline:disabled, .revoke-btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-outline:disabled:hover { background: var(--card); }

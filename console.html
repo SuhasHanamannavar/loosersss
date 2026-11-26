@@ -13,7 +13,7 @@
 <div class="app-shell">
   <aside class="side" id="side">
     <a class="side-brand" href="console.html"><span class="mark" data-icon="king"></span><span class="word">CHECKMATE</span></a>
-    <button class="side-org" type="button"><span data-icon="building"></span>org_silica<span class="chev" data-icon="chevron-down"></span></button>
+    <button class="side-org" type="button"><span data-icon="building"></span>No workspace<span class="chev" data-icon="chevron-down"></span></button>
     <p class="side-org-note">Multi-tenant · API keys and rosters isolated per organization</p>
     <div class="side-group">
       <p class="side-label">Monitor</p>
@@ -43,7 +43,7 @@
       </div>
       <div class="side-links">
         <a class="side-link" href="index.html"><span data-icon="external"></span>Field book</a>
-        <a class="side-link" href="settings.html"><span data-icon="refresh"></span>Reset demo state</a>
+        <a class="side-link" href="settings.html"><span data-icon="refresh"></span>Reset local state</a>
       </div>
     </div>
   </aside>
@@ -55,15 +55,15 @@
       <label class="gsearch"><span data-icon="search"></span><input type="text" placeholder="Search identities, assets, request IDs…" aria-label="Search"><kbd>⌘K</kbd></label>
       <div class="top-right">
         <div class="env-seg"><button class="active" type="button">Production</button><button type="button">Test</button></div>
-        <span class="sync-status"><span class="dot"></span>sync · checkmate-guard.vercel.app</span>
-        <span class="avatar">AS</span>
+        <span class="sync-status"><span class="dot"></span>offline · control plane not connected</span>
+        <span class="avatar" data-icon="user" aria-label="Account"></span>
       </div>
     </header>
 
     <main class="page">
       <div class="page-head">
         <div>
-          <span class="mono-tag">Control plane · org_silica · /api/sync</span>
+          <span class="mono-tag">Control plane · /api/sync</span>
           <h1>Overview.</h1>
           <p class="sub">Every request is verified against the disabled registry and sealed under ML-KEM-768 before plaintext touches memory. Revoked actors never see plaintext again.</p>
         </div>
@@ -76,23 +76,23 @@
       <section class="stats" aria-label="Executive telemetry">
         <div class="stat">
           <div class="k-label"><span data-icon="users"></span> Active identities</div>
-          <div class="k-value" data-count="1284">0</div>
-          <div class="k-sub"><span class="k-delta">+12</span> provisioned · last 24 h</div>
+          <div class="k-value">0</div>
+          <div class="k-sub">no identities provisioned yet</div>
         </div>
         <div class="stat">
           <div class="k-label"><span data-icon="lock"></span> Revoked identities</div>
-          <div class="k-value" data-count="37">0</div>
+          <div class="k-value">0</div>
           <div class="k-sub">committed to disabled registry</div>
         </div>
         <div class="stat">
           <div class="k-label"><span data-icon="file"></span> Protected assets</div>
-          <div class="k-value" data-count="4912">0</div>
+          <div class="k-value">0</div>
           <div class="k-sub">secrets, exports, connection strings</div>
         </div>
         <div class="stat">
           <div class="k-label"><span data-icon="activity"></span> Authorization health · 24 h</div>
-          <div class="k-value">96.2%</div>
-          <div class="k-sub">allowed 96.2% · denied 3.8%</div>
+          <div class="k-value">—</div>
+          <div class="k-sub">no decisions recorded in the last 24 h</div>
         </div>
       </section>
 
@@ -110,7 +110,7 @@
             </table>
           </div>
           <div class="dt-foot" style="border:0;padding:12px 0 0">
-            <span>Sample demonstration data · denied records carry no secret bytes</span>
+            <span>No decisions recorded yet · denied records carry no secret bytes</span>
             <a href="logs.html" style="display:inline-flex;align-items:center;gap:6px;color:var(--ink)"><span data-icon="arrow-right" style="width:13px;height:13px"></span>Full access log</a>
           </div>
         </section>
@@ -133,11 +133,11 @@
           </div>
           <table class="tbl" style="margin-top:12px">
             <tbody>
-              <tr><td class="mono" style="font-size:12px">setup</td><td class="sub mono" style="font-size:11px">state initialized</td></tr>
-              <tr><td class="mono" style="font-size:12px">read</td><td class="sub mono" style="font-size:11px">owner_allowed</td></tr>
-              <tr><td class="mono" style="font-size:12px">revoke</td><td class="sub mono" style="font-size:11px">disabled registry · 0.0 ms</td></tr>
+              <tr><td class="mono" style="font-size:12px">setup</td><td class="sub mono" style="font-size:11px">initialize durable state</td></tr>
+              <tr><td class="mono" style="font-size:12px">read</td><td class="sub mono" style="font-size:11px">owner policy check</td></tr>
+              <tr><td class="mono" style="font-size:12px">revoke</td><td class="sub mono" style="font-size:11px">append disabled registry record</td></tr>
               <tr><td class="mono" style="font-size:12px">protected_read</td><td class="sub mono" style="font-size:11px">KEM encapsulation + HMAC proof</td></tr>
-              <tr><td class="mono" style="font-size:12px">audit</td><td class="sub mono" style="font-size:11px">request_id evidence</td></tr>
+              <tr><td class="mono" style="font-size:12px">audit</td><td class="sub mono" style="font-size:11px">index request_id evidence</td></tr>
             </tbody>
           </table>
         </section>

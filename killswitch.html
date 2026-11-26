@@ -13,7 +13,7 @@
 <div class="app-shell">
   <aside class="side" id="side">
     <a class="side-brand" href="console.html"><span class="mark" data-icon="king"></span><span class="word">CHECKMATE</span></a>
-    <button class="side-org" type="button"><span data-icon="building"></span>org_silica<span class="chev" data-icon="chevron-down"></span></button>
+    <button class="side-org" type="button"><span data-icon="building"></span>No workspace<span class="chev" data-icon="chevron-down"></span></button>
     <p class="side-org-note">Multi-tenant · API keys and rosters isolated per organization</p>
     <div class="side-group">
       <p class="side-label">Monitor</p>
@@ -43,7 +43,7 @@
       </div>
       <div class="side-links">
         <a class="side-link" href="index.html"><span data-icon="external"></span>Field book</a>
-        <a class="side-link" href="settings.html"><span data-icon="refresh"></span>Reset demo state</a>
+        <a class="side-link" href="settings.html"><span data-icon="refresh"></span>Reset local state</a>
       </div>
     </div>
   </aside>
@@ -55,8 +55,8 @@
       <label class="gsearch"><span data-icon="search"></span><input type="text" placeholder="Search identities, assets, request IDs…" aria-label="Search"><kbd>⌘K</kbd></label>
       <div class="top-right">
         <div class="env-seg"><button class="active" type="button">Production</button><button type="button">Test</button></div>
-        <span class="sync-status"><span class="dot"></span>sync · checkmate-guard.vercel.app</span>
-        <span class="avatar">AS</span>
+        <span class="sync-status"><span class="dot"></span>offline · control plane not connected</span>
+        <span class="avatar" data-icon="user" aria-label="Account"></span>
       </div>
     </header>
 
@@ -86,7 +86,7 @@
           </div>
           <label class="field-label" for="actorSelect">Actor to revoke</label>
           <div class="select-wrap">
-            <select id="actorSelect"></select>
+            <select id="actorSelect"><option value="" disabled selected>No identities provisioned</option></select>
           </div>
           <label class="field-label" style="margin-top:16px">Loss reason</label>
           <div class="reasons" role="radiogroup" aria-label="Loss reason">
