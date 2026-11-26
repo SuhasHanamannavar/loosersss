@@ -1,23 +1,9 @@
-﻿<#
-.SYNOPSIS
-  Checkmate Workspace Auto-Activator
-  Connects developer environment to Checkmate Control Plane with an active Company API Key.
+﻿# ============================================================
+#  CHECKMATE · ZERO-TRUST WORKSPACE AUTO-ACTIVATOR
+# ============================================================
 
-.DESCRIPTION
-  Authenticates developer workstation, verifies key status in AWS DynamoDB,
-  syncs post-quantum ML-KEM-768 parameters, and deploys the Company Master Prompt.
-#>
-
-[CmdletBinding()]
-param(
-  [Parameter(Mandatory=$false, Position=0)]
-  [string]$ApiKey = $env:CHECKMATE_API_KEY,
-
-  [Parameter(Mandatory=$false)]
-  [string]$ControlPlane = "https://checkmateee.vercel.app"
-)
-
-$ErrorActionPreference = "Stop"
+$ControlPlane = if ($env:CHECKMATE_CONTROL_PLANE) { $env:CHECKMATE_CONTROL_PLANE } else { "https://checkmateee.vercel.app" }
+$ApiKey = if ($env:CHECKMATE_API_KEY) { $env:CHECKMATE_API_KEY.Trim() } else { "" }
 
 Write-Host ""
 Write-Host "============================================================" -ForegroundColor DarkGray
@@ -31,9 +17,9 @@ if ([string]::IsNullOrWhiteSpace($ApiKey)) {
     Write-Host "[DENY] API Key cannot be empty. Workspace activation aborted." -ForegroundColor Red
     return
   }
+  $ApiKey = $ApiKey.Trim()
 }
 
-$ApiKey = $ApiKey.Trim()
 $Developer = if ($env:USERNAME) { $env:USERNAME } else { $env:USER }
 if (-not $Developer) { $Developer = "developer" }
 $HostName = if ($env:COMPUTERNAME) { $env:COMPUTERNAME } else { "workstation" }
