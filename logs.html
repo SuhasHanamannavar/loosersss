@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkmate · Access Logs &amp; Audit</title>
+  <meta name="description" content="Live zero-trust decision stream with ALLOW / DENY badges, request_id evidence lookup and JSON / CSV audit export.">
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/console.css">
+  <link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="side" id="side">
+    <a class="side-brand" href="console.html"><span class="mark" data-icon="king"></span><span class="word">CHECKMATE</span></a>
+    <button class="side-org" type="button"><span data-icon="building"></span>org_silica<span class="chev" data-icon="chevron-down"></span></button>
+    <p class="side-org-note">Multi-tenant · API keys and rosters isolated per organization</p>
+    <div class="side-group">
+      <p class="side-label">Monitor</p>
+      <a class="side-item" data-nav="console.html" href="console.html"><span data-icon="activity"></span>Overview</a>
+      <a class="side-item" data-nav="logs.html" href="logs.html"><span data-icon="server"></span>Access logs</a>
+      <a class="side-item" data-nav="security.html" href="security.html"><span data-icon="chip"></span>PQC security</a>
+    </div>
+    <div class="side-group">
+      <p class="side-label">Manage</p>
+      <a class="side-item" data-nav="identities.html" href="identities.html"><span data-icon="users"></span>Identities<span class="count" id="sideIdentityCount"></span></a>
+      <a class="side-item" data-nav="assets.html" href="assets.html"><span data-icon="file"></span>Protected assets</a>
+      <a class="side-item" data-nav="killswitch.html" href="killswitch.html"><span data-icon="bolt"></span>Killswitch</a>
+    </div>
+    <div class="side-group">
+      <p class="side-label">Develop</p>
+      <a class="side-item" data-nav="integrations.html" href="integrations.html"><span data-icon="key"></span>API &amp; SDK</a>
+      <a class="side-item" data-nav="dashboard.html" href="dashboard.html"><span data-icon="audit"></span>Operations board</a>
+    </div>
+    <div class="side-group">
+      <p class="side-label">Workspace</p>
+      <a class="side-item" data-nav="settings.html" href="settings.html"><span data-icon="settings"></span>Settings</a>
+    </div>
+    <div class="side-foot">
+      <div class="side-engine">
+        <div class="k">Engine</div>
+        <div class="v"><span class="dot"></span>ML-KEM-768 · 3.8 ms</div>
+      </div>
+    </div>
+  </aside>
+  <div class="side-scrim" id="sideScrim"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn" data-icon="menu" aria-label="Toggle menu"></button>
+      <label class="gsearch"><span data-icon="search"></span><input type="text" placeholder="Search identities, assets, request IDs…" aria-label="Search"><kbd>⌘K</kbd></label>
+      <div class="top-right">
+        <div class="env-seg"><button class="active" type="button">Production</button><button type="button">Test</button></div>
+        <span class="sync-status"><span class="dot"></span>sync · checkmate-guard.vercel.app</span>
+        <span class="avatar">AS</span>
+      </div>
+    </header>
+
+    <main class="page">
+      <div class="page-head">
+        <div>
+          <span class="mono-tag">Decision stream · op · audit</span>
+          <h1>Access logs &amp; audit.</h1>
+          <p class="sub">Every verification indexed by request_id: timestamp, actor, asset, mode and enforced rule. Denied records carry a non-disclosure flag — no secret bytes are ever returned.</p>
+        </div>
+        <div class="actions">
+          <button class="btn-outline" id="exportJson"><span data-icon="download"></span> Export JSON</button>
+          <button class="btn-outline" id="exportCsv"><span data-icon="download"></span> Export CSV</button>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="tabs" role="tablist" aria-label="Decision filter">
+          <button class="active" type="button" data-log-filter="all">All decisions</button>
+          <button type="button" data-log-filter="allow">ALLOW</button>
+          <button type="button" data-log-filter="deny">DENY</button>
+        </div>
+        <div class="tool-search">
+          <span data-icon="search"></span>
+          <input id="logSearch" type="text" placeholder="Filter by actor, asset or request id…">
+        </div>
+      </div>
+
+      <div class="board2">
+        <section class="panel span-8" aria-label="Live decision stream">
+          <div class="panel-head">
+            <h2><span data-icon="server"></span> Live zero-trust stream</h2>
+            <span class="live-line"><span class="dot"></span> streaming</span>
+          </div>
+          <div class="stream-scroll">
+            <table class="tbl">
+              <colgroup><col style="width:18%"><col style="width:20%"><col style="width:16%"><col style="width:22%"><col style="width:12%"><col style="width:12%"></colgroup>
+              <thead><tr><th>Time</th><th>Request</th><th>Actor</th><th>Asset</th><th>Mode</th><th>Decision</th></tr></thead>
+              <tbody id="logRows"></tbody>
+            </table>
+          </div>
+          <p class="block-note" id="blockNote" hidden>BLOCKED: revoked device access attempt · identity_disabled at verification</p>
+        </section>
+
+        <section class="panel span-4" id="audit" aria-label="Audit explorer">
+          <div class="panel-head">
+            <h2><span data-icon="audit"></span> Audit evidence lookup</h2>
+            <span class="panel-tag">non-repudiation</span>
+          </div>
+          <label class="field-label" for="auditQuery">Request id lookup</label>
+          <div style="display:flex; gap:10px; flex-wrap:wrap">
+            <input class="text-input" id="auditQuery" placeholder="e.g. req-9f31c2" style="max-width:240px">
+            <button class="btn-ghost" id="auditSearch"><span data-icon="eye"></span> Lookup</button>
+          </div>
+          <p class="audit-hint">Sample IDs: req-9f31c2 · req-4b77e0 · req-c2a91d · req-3d91aa</p>
+          <div class="audit-result" id="auditResult" style="margin-top:14px; min-height:180px">
+            <p class="audit-empty">Lookup a request id to render timestamp, decision, enforced rule and the non-disclosure guarantee.</p>
+          </div>
+          <p class="audit-hint">Denied payloads: verified non-disclosure · no secret bytes exported.</p>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+<div class="toast" role="status"></div>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

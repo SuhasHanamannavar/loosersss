@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkmate · Identities</title>
+  <meta name="description" content="Identity roster for org_silica: trusted actors, locked identities, per-device verification and one-click revocation.">
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/console.css">
+  <link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="side" id="side">
+    <a class="side-brand" href="console.html"><span class="mark" data-icon="king"></span><span class="word">CHECKMATE</span></a>
+    <button class="side-org" type="button"><span data-icon="building"></span>org_silica<span class="chev" data-icon="chevron-down"></span></button>
+    <p class="side-org-note">Multi-tenant · API keys and rosters isolated per organization</p>
+    <div class="side-group">
+      <p class="side-label">Monitor</p>
+      <a class="side-item" data-nav="console.html" href="console.html"><span data-icon="activity"></span>Overview</a>
+      <a class="side-item" data-nav="logs.html" href="logs.html"><span data-icon="server"></span>Access logs</a>
+      <a class="side-item" data-nav="security.html" href="security.html"><span data-icon="chip"></span>PQC security</a>
+    </div>
+    <div class="side-group">
+      <p class="side-label">Manage</p>
+      <a class="side-item" data-nav="identities.html" href="identities.html"><span data-icon="users"></span>Identities<span class="count" id="sideIdentityCount"></span></a>
+      <a class="side-item" data-nav="assets.html" href="assets.html"><span data-icon="file"></span>Protected assets</a>
+      <a class="side-item" data-nav="killswitch.html" href="killswitch.html"><span data-icon="bolt"></span>Killswitch</a>
+    </div>
+    <div class="side-group">
+      <p class="side-label">Develop</p>
+      <a class="side-item" data-nav="integrations.html" href="integrations.html"><span data-icon="key"></span>API &amp; SDK</a>
+      <a class="side-item" data-nav="dashboard.html" href="dashboard.html"><span data-icon="audit"></span>Operations board</a>
+    </div>
+    <div class="side-group">
+      <p class="side-label">Workspace</p>
+      <a class="side-item" data-nav="settings.html" href="settings.html"><span data-icon="settings"></span>Settings</a>
+    </div>
+    <div class="side-foot">
+      <div class="side-engine">
+        <div class="k">Engine</div>
+        <div class="v"><span class="dot"></span>ML-KEM-768 · 3.8 ms</div>
+      </div>
+    </div>
+  </aside>
+  <div class="side-scrim" id="sideScrim"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn" data-icon="menu" aria-label="Toggle menu"></button>
+      <label class="gsearch"><span data-icon="search"></span><input type="text" placeholder="Search identities, assets, request IDs…" aria-label="Search"><kbd>⌘K</kbd></label>
+      <div class="top-right">
+        <div class="env-seg"><button class="active" type="button">Production</button><button type="button">Test</button></div>
+        <span class="sync-status"><span class="dot"></span>sync · checkmate-guard.vercel.app</span>
+        <span class="avatar">AS</span>
+      </div>
+    </header>
+
+    <main class="page">
+      <div class="page-head">
+        <div>
+          <span class="mono-tag">Identity roster · disabled registry</span>
+          <h1>Identities.</h1>
+          <p class="sub">Every developer, contractor and service identity that can request a protected asset. Revocation commits to the registry before the next read — the token clock no longer matters.</p>
+        </div>
+        <div class="actions">
+          <button class="btn-ghost" data-modal-open="provisionModal"><span data-icon="plus"></span>Provision identity</button>
+          <a class="btn-outline" href="killswitch.html"><span data-icon="bolt"></span>Emergency killswitch</a>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="tabs" role="tablist" aria-label="Identity filter">
+          <button class="active" type="button" data-identity-filter="all">All</button>
+          <button type="button" data-identity-filter="trusted">Trusted</button>
+          <button type="button" data-identity-filter="locked">Locked</button>
+        </div>
+        <div class="tool-search">
+          <span data-icon="search"></span>
+          <input id="identitySearch" type="text" placeholder="Filter by name, handle, role, region…">
+        </div>
+        <span class="spacer"></span>
+      </div>
+
+      <div class="dt">
+        <table class="dt-table">
+          <colgroup><col style="width:21%"><col style="width:15%"><col style="width:10%"><col style="width:8%"><col style="width:15%"><col style="width:11%"><col style="width:20%"></colgroup>
+          <thead><tr><th>Identity</th><th>Role</th><th>Region</th><th>Devices</th><th>Last verified</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="identityRows"></tbody>
+        </table>
+        <div class="dt-foot">
+          <span>Sample roster · demonstration state persisted locally only</span>
+          <span>setup · read · revoke · protected_read · audit</span>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Identity profile modal -->
+<div class="modal-backdrop" id="identityModal-backdrop"></div>
+<div class="modal" id="identityModal" role="dialog" aria-modal="true" aria-labelledby="identityModalTitle">
+  <div class="modal-head">
+    <div>
+      <h3 id="identityModalTitle">Identity profile</h3>
+      <p>Registration record, device count and protected assets held by this actor.</p>
+    </div>
+    <button class="modal-close" type="button" data-modal-close data-icon="close" aria-label="Close"></button>
+  </div>
+  <div class="modal-body" id="identityDetailBody"></div>
+  <div class="modal-foot">
+    <button class="btn-outline" type="button" data-modal-close>Close</button>
+    <button class="btn-danger-outline" type="button" id="identityRevokeBtn"><span data-icon="lock"></span>Revoke identity</button>
+  </div>
+</div>
+
+<!-- Revoke reason modal -->
+<div class="modal-backdrop" id="revokeModal-backdrop"></div>
+<div class="modal" id="revokeModal" role="dialog" aria-modal="true" aria-labelledby="revokeModalTitle">
+  <div class="modal-head">
+    <div>
+      <h3 id="revokeModalTitle">Revoke identity</h3>
+      <p>The actor enters the disabled registry before the next request read. Local envelopes seal without an ephemeral shared secret.</p>
+    </div>
+    <button class="modal-close" type="button" data-modal-close data-icon="close" aria-label="Close"></button>
+  </div>
+  <div class="modal-body">
+    <div class="field">
+      <label for="revokeActorSelect">Actor</label>
+      <select id="revokeActorSelect"></select>
+    </div>
+    <label class="field-label" style="margin:6px 0 9px">Reason for revocation</label>
+    <div class="reasons" role="radiogroup" aria-label="Reason">
+      <label class="reason"><input type="radio" name="mreason" value="Stolen laptop" checked><span class="dot"></span> Stolen / lost laptop</label>
+      <label class="reason"><input type="radio" name="mreason" value="Contract ended"><span class="dot"></span> Contract ended · contractor exit</label>
+      <label class="reason"><input type="radio" name="mreason" value="Offboarded after notice"><span class="dot"></span> Offboarded after notice</label>
+      <label class="reason"><input type="radio" name="mreason" value="Suspected token leak"><span class="dot"></span> Suspected token leak</label>
+      <label class="reason"><input type="radio" name="mreason" value="Compromised session"><span class="dot"></span> Compromised session</label>
+    </div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn-outline" type="button" data-modal-close>Cancel</button>
+    <button class="btn-danger-outline" type="button" id="confirmRevokeBtn"><span data-icon="lock"></span>Commit revocation</button>
+  </div>
+</div>
+
+<!-- Provision identity modal -->
+<div class="modal-backdrop" id="provisionModal-backdrop"></div>
+<div class="modal" id="provisionModal" role="dialog" aria-modal="true" aria-labelledby="provisionTitle">
+  <div class="modal-head">
+    <div>
+      <h3 id="provisionTitle">Provision identity</h3>
+      <p>Assign a verified handle, role and region. The guard bootstraps a 1184-byte ML-KEM-768 public key on first run.</p>
+    </div>
+    <button class="modal-close" type="button" data-modal-close data-icon="close" aria-label="Close"></button>
+  </div>
+  <div class="modal-body">
+    <div class="field"><label for="provName">Display name</label><input id="provName" type="text" placeholder="e.g. Priya Nair"></div>
+    <div class="field"><label for="provRole">Role</label>
+      <select id="provRole"><option>contract-developer</option><option>platform-engineer</option><option>finance-clerk</option><option>security-ops</option><option>product-manager</option></select>
+    </div>
+    <div class="field"><label for="provRegion">Region</label>
+      <select id="provRegion"><option>eu-west</option><option>us-east</option><option>ap-south</option><option>global</option></select>
+    </div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn-outline" type="button" data-modal-close>Cancel</button>
+    <button class="btn-ghost" type="button" data-demo-toast="Identity provisioned · demo state" data-modal-close><span data-icon="check"></span>Provision</button>
+  </div>
+</div>
+
+<div class="toast" role="status"></div>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

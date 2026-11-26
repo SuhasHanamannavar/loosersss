@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkmate · API &amp; SDK</title>
+  <meta name="description" content="API keys, drop-in Python and Node guards, CLI contract (setup, read, revoke, protected_read, audit) and the serverless control plane.">
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/console.css">
+  <link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="side" id="side">
+    <a class="side-brand" href="console.html"><span class="mark" data-icon="king"></span><span class="word">CHECKMATE</span></a>
+    <button class="side-org" type="button"><span data-icon="building"></span>org_silica<span class="chev" data-icon="chevron-down"></span></button>
+    <p class="side-org-note">Multi-tenant · API keys and rosters isolated per organization</p>
+    <div class="side-group">
+      <p class="side-label">Monitor</p>
+      <a class="side-item" data-nav="console.html" href="console.html"><span data-icon="activity"></span>Overview</a>
+      <a class="side-item" data-nav="logs.html" href="logs.html"><span data-icon="server"></span>Access logs</a>
+      <a class="side-item" data-nav="security.html" href="security.html"><span data-icon="chip"></span>PQC security</a>
+    </div>
+    <div class="side-group">
+      <p class="side-label">Manage</p>
+      <a class="side-item" data-nav="identities.html" href="identities.html"><span data-icon="users"></span>Identities<span class="count" id="sideIdentityCount"></span></a>
+      <a class="side-item" data-nav="assets.html" href="assets.html"><span data-icon="file"></span>Protected assets</a>
+      <a class="side-item" data-nav="killswitch.html" href="killswitch.html"><span data-icon="bolt"></span>Killswitch</a>
+    </div>
+    <div class="side-group">
+      <p class="side-label">Develop</p>
+      <a class="side-item" data-nav="integrations.html" href="integrations.html"><span data-icon="key"></span>API &amp; SDK</a>
+      <a class="side-item" data-nav="dashboard.html" href="dashboard.html"><span data-icon="audit"></span>Operations board</a>
+    </div>
+    <div class="side-group">
+      <p class="side-label">Workspace</p>
+      <a class="side-item" data-nav="settings.html" href="settings.html"><span data-icon="settings"></span>Settings</a>
+    </div>
+    <div class="side-foot">
+      <div class="side-engine">
+        <div class="k">Engine</div>
+        <div class="v"><span class="dot"></span>ML-KEM-768 · 3.8 ms</div>
+      </div>
+    </div>
+  </aside>
+  <div class="side-scrim" id="sideScrim"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn" data-icon="menu" aria-label="Toggle menu"></button>
+      <label class="gsearch"><span data-icon="search"></span><input type="text" placeholder="Search identities, assets, request IDs…" aria-label="Search"><kbd>⌘K</kbd></label>
+      <div class="top-right">
+        <div class="env-seg"><button class="active" type="button">Production</button><button type="button">Test</button></div>
+        <span class="sync-status"><span class="dot"></span>sync · checkmate-guard.vercel.app</span>
+        <span class="avatar">AS</span>
+      </div>
+    </header>
+
+    <main class="page">
+      <div class="page-head">
+        <div>
+          <span class="mono-tag">Developer surface · guard drop-in</span>
+          <h1>API &amp; SDK.</h1>
+          <p class="sub">Issue scoped control-plane keys, drop the guard into the app bootstrap, and call the five-operation CLI contract. The guard verifies identity before any secret variable enters memory.</p>
+        </div>
+        <div class="actions">
+          <button class="btn-ghost" data-modal-open="keyModal"><span data-icon="plus"></span>Create API key</button>
+        </div>
+      </div>
+
+      <div class="board2">
+        <section class="panel span-8" aria-label="API keys">
+          <div class="panel-head">
+            <h2><span data-icon="key"></span> Control-plane API keys</h2>
+            <span class="panel-tag">org_isolated</span>
+          </div>
+          <div class="dt" style="box-shadow:none;border:0">
+            <table class="dt-table">
+              <colgroup><col style="width:28%"><col style="width:24%"><col style="width:13%"><col style="width:13%"><col style="width:22%"></colgroup>
+              <thead><tr><th>Name</th><th>Scopes</th><th>Created</th><th>Last used</th><th></th></tr></thead>
+              <tbody id="keyRows"></tbody>
+            </table>
+          </div>
+          <p class="audit-hint" style="margin-top:12px">Keys authenticate calls to <span class="mono">/api/sync</span>. Revoking a key blocks that integration immediately; user identities are revoked separately on the killswitch.</p>
+        </section>
+
+        <section class="panel span-4" aria-label="Control plane">
+          <div class="panel-head">
+            <h2><span data-icon="globe"></span> Control plane</h2>
+            <span class="panel-tag">serverless · Vercel</span>
+          </div>
+          <div class="fact-grid" style="grid-template-columns:1fr">
+            <div class="fact"><div class="k">Sync endpoint</div><div class="v">checkmate-guard.vercel.app/api/sync</div></div>
+            <div class="fact"><div class="k">Measured verify</div><div class="v">3.8 ms · budget &lt; 2000 ms</div></div>
+            <div class="fact"><div class="k">Tenant</div><div class="v">org_silica · production</div></div>
+            <div class="fact"><div class="k">Isolated tenant</div><div class="v">org_company_xyz · separate keys + roster</div></div>
+          </div>
+          <table class="tbl" style="margin-top:14px">
+            <tbody>
+              <tr><td class="mono" style="font-size:12px">Multi-tenant isolation</td><td class="sub mono" style="font-size:11px">API keys · rosters · proofs</td></tr>
+              <tr><td class="mono" style="font-size:12px">State commit</td><td class="sub mono" style="font-size:11px">portalocker LOCK_EX · atomic rename</td></tr>
+              <tr><td class="mono" style="font-size:12px">Fail mode offline</td><td class="sub mono" style="font-size:11px">closed · DENY at boundary</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="panel span-12" aria-label="Guard SDK">
+          <div class="panel-head">
+            <h2><span data-icon="plug"></span> Drop-in guard SDK</h2>
+            <span class="panel-tag">silica_guard.py · checkmate-guard.js</span>
+          </div>
+          <div data-tabs data-tabs-scope>
+            <div class="code-tabs">
+              <button class="active" type="button" data-tab="python">Python · app.py</button>
+              <button type="button" data-tab="node">Node.js · server.js</button>
+            </div>
+            <div class="code-panel" data-panel="python">
+              <div class="term">
+                <div class="term-bar"><i></i><i></i><i></i><span class="title">silica_guard.py · inserted at app startup</span>
+                  <button class="copy-term" type="button" data-copy-target="#pyCode"><span data-icon="copy"></span> Copy</button>
+                </div>
+                <pre id="pyCode"><span class="c"># silica_guard.py — boot-time identity guard</span>
+<span class="p">from</span> silica_guard import Guard
+
+guard = Guard(endpoint=<span class="s">"https://checkmate-guard.vercel.app/api/sync"</span>)
+
+<span class="p">@app.before_request</span>
+<span class="p">def</span> verify_identity():
+    decision = guard.verify(actor=current_identity, asset=<span class="s">"prod-db-credentials"</span>)
+    <span class="c"># DENY before any .env variable or connection string touches memory</span>
+    <span class="p">if</span> decision.status != <span class="s">"ok"</span>:
+        raise SystemExit(1)</pre>
+              </div>
+            </div>
+            <div class="code-panel" data-panel="node" hidden>
+              <div class="term">
+                <div class="term-bar"><i></i><i></i><i></i><span class="title">checkmate-guard.js · imported in server.js</span>
+                  <button class="copy-term" type="button" data-copy-target="#nodeCode"><span data-icon="copy"></span> Copy</button>
+                </div>
+                <pre id="nodeCode"><span class="c">// checkmate-guard.js — verify before secrets load</span>
+<span class="p">const</span> { Guard } = require(<span class="s">"./checkmate-guard"</span>);
+
+<span class="p">const</span> guard = <span class="p">new</span> Guard({
+  endpoint: <span class="s">"https://checkmate-guard.vercel.app/api/sync"</span>
+});
+
+app.use(<span class="p">async</span> (req, res, next) => {
+  const decision = <span class="p">await</span> guard.verify({
+    actor: req.user, asset: <span class="s">"stripe-customer-keys"</span>
+  });
+  <span class="c">// revoked identity → terminate before secrets reach process memory</span>
+  <span class="p">if</span> (decision.decision !== <span class="s">"ALLOW"</span>) process.exit(1);
+  next();
+});</pre>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel span-7" aria-label="CLI contract">
+          <div class="panel-head">
+            <h2><span data-icon="terminal"></span> Adapter contract v1 · CLI</h2>
+            <span class="panel-tag">track4_service.py</span>
+          </div>
+          <div class="term">
+            <div class="term-bar"><i></i><i></i><i></i><span class="title">operations · setup / read / revoke / protected_read / audit</span></div>
+            <pre><span class="c"># initialize durable state and asset registry</span>
+$ python track4_service.py --op setup --identity alice
+
+<span class="c"># owner-only standard read</span>
+$ python track4_service.py --op read --actor alice --asset doc-1
+
+<span class="c"># commit revocation to the disabled registry</span>
+$ python track4_service.py --op revoke --actor alice
+
+<span class="c"># PQ-sealed read: KEM ciphertext + HMAC proof</span>
+$ python track4_service.py --op protected_read --actor alice --asset doc-1
+
+<span class="c"># resolve a request_id to evidence</span>
+$ python track4_service.py --op audit</pre>
+          </div>
+        </section>
+
+        <section class="panel span-5" aria-label="AI drop-in agent">
+          <div class="panel-head">
+            <h2><span data-icon="chip"></span> AI drop-in agent prompt</h2>
+            <span class="panel-tag">Cursor · Claude Code · Copilot</span>
+          </div>
+          <ol class="check-list">
+            <li><span class="n">01</span><span>Locate the project startup file (<span class="mono" style="font-family:var(--font-mono)">app.py</span> or <span class="mono" style="font-family:var(--font-mono)">server.js</span>).</span></li>
+            <li><span class="n">02</span><span>Insert <span class="mono" style="font-family:var(--font-mono)">silica_guard.py</span> or <span class="mono" style="font-family:var(--font-mono)">checkmate-guard.js</span> before environment variables load.</span></li>
+            <li><span class="n">03</span><span>Verify identity at every boot against the control plane; sub-second round trip.</span></li>
+            <li><span class="n">04</span><span>On DENY / revoked identity, call <span class="mono" style="font-family:var(--font-mono)">process.exit(1)</span> before any .env value or DB connection string enters memory.</span></li>
+          </ol>
+          <p class="audit-hint" style="margin-top:14px">The generated master prompt adapts to each repo's stack and names the actual assets to protect.</p>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Create API key modal -->
+<div class="modal-backdrop" id="keyModal-backdrop"></div>
+<div class="modal" id="keyModal" role="dialog" aria-modal="true" aria-labelledby="keyModalTitle">
+  <div class="modal-head">
+    <div>
+      <h3 id="keyModalTitle">Create control-plane key</h3>
+      <p>Scoped key for the <span class="mono" style="font-family:var(--font-mono)">/api/sync</span> endpoint. It is revealed once — store it in your secret manager.</p>
+    </div>
+    <button class="modal-close" type="button" data-modal-close data-icon="close" aria-label="Close"></button>
+  </div>
+  <div class="modal-body">
+    <div class="field">
+      <label for="keyName">Key name</label>
+      <input id="keyName" type="text" placeholder="e.g. production-worker">
+    </div>
+    <div class="field">
+      <label for="keyEnv">Environment</label>
+      <select id="keyEnv"><option value="live">live · production</option><option value="test">test · sandbox</option></select>
+    </div>
+    <div class="key-reveal" id="keyReveal" hidden>
+      <span class="key-value" style="flex:1"></span>
+      <button class="copy-inline row-btn" type="button" data-copy-target="#keyReveal .key-value"><span data-icon="copy" style="width:12px;height:12px"></span> Copy</button>
+    </div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn-outline" type="button" data-modal-close>Cancel</button>
+    <button class="btn-ghost" type="button" id="generateKeyBtn"><span data-icon="key"></span> Generate key</button>
+  </div>
+</div>
+
+<div class="toast" role="status"></div>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

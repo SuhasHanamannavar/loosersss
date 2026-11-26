@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkmate · Overview</title>
+  <meta name="description" content="Checkmate control plane overview: identity health, recent verified decisions, engine status and containment scenarios.">
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/console.css">
+  <link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="side" id="side">
+    <a class="side-brand" href="console.html"><span class="mark" data-icon="king"></span><span class="word">CHECKMATE</span></a>
+    <button class="side-org" type="button"><span data-icon="building"></span>org_silica<span class="chev" data-icon="chevron-down"></span></button>
+    <p class="side-org-note">Multi-tenant · API keys and rosters isolated per organization</p>
+    <div class="side-group">
+      <p class="side-label">Monitor</p>
+      <a class="side-item" data-nav="console.html" href="console.html"><span data-icon="activity"></span>Overview</a>
+      <a class="side-item" data-nav="logs.html" href="logs.html"><span data-icon="server"></span>Access logs</a>
+      <a class="side-item" data-nav="security.html" href="security.html"><span data-icon="chip"></span>PQC security</a>
+    </div>
+    <div class="side-group">
+      <p class="side-label">Manage</p>
+      <a class="side-item" data-nav="identities.html" href="identities.html"><span data-icon="users"></span>Identities<span class="count" id="sideIdentityCount"></span></a>
+      <a class="side-item" data-nav="assets.html" href="assets.html"><span data-icon="file"></span>Protected assets</a>
+      <a class="side-item" data-nav="killswitch.html" href="killswitch.html"><span data-icon="bolt"></span>Killswitch</a>
+    </div>
+    <div class="side-group">
+      <p class="side-label">Develop</p>
+      <a class="side-item" data-nav="integrations.html" href="integrations.html"><span data-icon="key"></span>API &amp; SDK</a>
+      <a class="side-item" data-nav="dashboard.html" href="dashboard.html"><span data-icon="audit"></span>Operations board</a>
+    </div>
+    <div class="side-group">
+      <p class="side-label">Workspace</p>
+      <a class="side-item" data-nav="settings.html" href="settings.html"><span data-icon="settings"></span>Settings</a>
+    </div>
+    <div class="side-foot">
+      <div class="side-engine">
+        <div class="k">Engine</div>
+        <div class="v"><span class="dot"></span>ML-KEM-768 · 3.8 ms</div>
+      </div>
+    </div>
+  </aside>
+  <div class="side-scrim" id="sideScrim"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn" data-icon="menu" aria-label="Toggle menu"></button>
+      <label class="gsearch"><span data-icon="search"></span><input type="text" placeholder="Search identities, assets, request IDs…" aria-label="Search"><kbd>⌘K</kbd></label>
+      <div class="top-right">
+        <div class="env-seg"><button class="active" type="button">Production</button><button type="button">Test</button></div>
+        <span class="sync-status"><span class="dot"></span>sync · checkmate-guard.vercel.app</span>
+        <span class="avatar">AS</span>
+      </div>
+    </header>
+
+    <main class="page">
+      <div class="page-head">
+        <div>
+          <span class="mono-tag">Control plane · org_silica · /api/sync</span>
+          <h1>Overview.</h1>
+          <p class="sub">Every request is verified against the disabled registry and sealed under ML-KEM-768 before plaintext touches memory. Revoked actors never see plaintext again.</p>
+        </div>
+        <div class="actions">
+          <a class="btn-ghost" href="killswitch.html"><span data-icon="bolt"></span>Open killswitch</a>
+          <a class="btn-outline" href="logs.html"><span data-icon="eye"></span>Open logs</a>
+        </div>
+      </div>
+
+      <section class="stats" aria-label="Executive telemetry">
+        <div class="stat">
+          <div class="k-label"><span data-icon="users"></span> Active identities</div>
+          <div class="k-value" data-count="1284">0</div>
+          <div class="k-sub"><span class="k-delta">+12</span> provisioned · last 24 h</div>
+        </div>
+        <div class="stat">
+          <div class="k-label"><span data-icon="lock"></span> Revoked identities</div>
+          <div class="k-value" data-count="37">0</div>
+          <div class="k-sub">committed to disabled registry</div>
+        </div>
+        <div class="stat">
+          <div class="k-label"><span data-icon="file"></span> Protected assets</div>
+          <div class="k-value" data-count="4912">0</div>
+          <div class="k-sub">secrets, exports, connection strings</div>
+        </div>
+        <div class="stat">
+          <div class="k-label"><span data-icon="activity"></span> Authorization health · 24 h</div>
+          <div class="k-value">96.2%</div>
+          <div class="k-sub">allowed 96.2% · denied 3.8%</div>
+        </div>
+      </section>
+
+      <div class="board2">
+        <section class="panel span-8" aria-label="Recent decisions">
+          <div class="panel-head">
+            <h2><span data-icon="server"></span> Recent verified decisions</h2>
+            <span class="panel-tag">request_id indexed</span>
+          </div>
+          <div class="dt" style="box-shadow:none;border:0">
+            <table class="dt-table">
+              <colgroup><col style="width:16%"><col style="width:18%"><col style="width:14%"><col style="width:24%"><col style="width:14%"><col style="width:14%"></colgroup>
+              <thead><tr><th>Time</th><th>Request</th><th>Actor</th><th>Asset</th><th>Mode</th><th>Decision</th></tr></thead>
+              <tbody id="overviewRows"></tbody>
+            </table>
+          </div>
+          <div class="dt-foot" style="border:0;padding:12px 0 0">
+            <span>Sample demonstration data · denied records carry no secret bytes</span>
+            <a href="logs.html" style="display:inline-flex;align-items:center;gap:6px;color:var(--ink)"><span data-icon="arrow-right" style="width:13px;height:13px"></span>Full access log</a>
+          </div>
+        </section>
+
+        <section class="panel span-4" aria-label="Engine status">
+          <div class="panel-head">
+            <h2><span data-icon="chip"></span> Engine status</h2>
+            <span class="panel-tag">FIPS 203</span>
+          </div>
+          <div class="fact-grid" style="grid-template-columns:1fr">
+            <div class="fact"><div class="k">Control plane</div><div class="v">checkmate-guard.vercel.app/api/sync</div></div>
+            <div class="fact"><div class="k">KEM suite</div><div class="v">ML-KEM-768 · Kyber768</div></div>
+            <div class="fact"><div class="k">Measured latency</div><div class="v">3.8 ms · contract budget &lt; 2000 ms</div></div>
+            <div class="fact"><div class="k">Atomic persistence</div><div class="v">portalocker LOCK_EX · os.replace commit</div></div>
+          </div>
+          <div class="hndl" style="margin-top:14px">
+            <h3>Latency budget</h3>
+            <div class="hndl-row secure"><span class="alg">measured</span><span class="hndl-track"><i></i></span><span class="hndl-state">3.8 ms</span></div>
+            <div class="hndl-row"><span class="alg">budget</span><span class="hndl-track"><i style="width:100%;background:#e5e5ea"></i></span><span class="hndl-state">&lt; 2000 ms</span></div>
+          </div>
+          <table class="tbl" style="margin-top:12px">
+            <tbody>
+              <tr><td class="mono" style="font-size:12px">setup</td><td class="sub mono" style="font-size:11px">state initialized</td></tr>
+              <tr><td class="mono" style="font-size:12px">read</td><td class="sub mono" style="font-size:11px">owner_allowed</td></tr>
+              <tr><td class="mono" style="font-size:12px">revoke</td><td class="sub mono" style="font-size:11px">disabled registry · 0.0 ms</td></tr>
+              <tr><td class="mono" style="font-size:12px">protected_read</td><td class="sub mono" style="font-size:11px">KEM encapsulation + HMAC proof</td></tr>
+              <tr><td class="mono" style="font-size:12px">audit</td><td class="sub mono" style="font-size:11px">request_id evidence</td></tr>
+            </tbody>
+          </table>
+        </section>
+      </div>
+
+      <section style="margin-top:26px">
+        <div class="panel-head" style="margin-bottom:12px">
+          <h2><span data-icon="shield"></span>Containment scenarios covered</h2>
+          <span class="panel-tag">threat model · A / B / C</span>
+        </div>
+        <div class="scenario-grid">
+          <article class="scenario">
+            <span class="idx">Scenario A · contractor exit</span>
+            <h3>Freelancer keeps keys after Friday.</h3>
+            <p>A contract finishes but the codebase, .env credentials and Stripe customer keys remain on a personal laptop. Password cuts do not touch files already downloaded.</p>
+            <div class="fix"><span data-icon="ban"></span>revoke actor at the root · disabled before the next protected_read; the local envelope yields no plaintext.</div>
+          </article>
+          <article class="scenario">
+            <span class="idx">Scenario B · stolen laptop</span>
+            <h3>Device goes offline in airplane mode.</h3>
+            <p>The laptop is lost in a cab. The attacker opens the lid and disables Wi-Fi; remote MDM wipe commands can never reach the machine.</p>
+            <div class="fix"><span data-icon="ban"></span>offline device fails closed · ciphertext stays unrecoverable garbage without the ephemeral shared secret.</div>
+          </article>
+          <article class="scenario">
+            <span class="idx">Scenario C · insider at exit</span>
+            <h3>Disgruntled employee copies files.</h3>
+            <p>An employee being fired tries to export confidential files before leaving. The old model trusts the token until it expires.</p>
+            <div class="fix"><span data-icon="ban"></span>revoke commits atomic state · every later read DENYs before any key material is calculated.</div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+<div class="toast" role="status"></div>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkmate · Settings</title>
+  <meta name="description" content="Organization tenants, team roster, engine configuration, audit retention and the demonstration danger zone.">
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/console.css">
+  <link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="side" id="side">
+    <a class="side-brand" href="console.html"><span class="mark" data-icon="king"></span><span class="word">CHECKMATE</span></a>
+    <button class="side-org" type="button"><span data-icon="building"></span>org_silica<span class="chev" data-icon="chevron-down"></span></button>
+    <p class="side-org-note">Multi-tenant · API keys and rosters isolated per organization</p>
+    <div class="side-group">
+      <p class="side-label">Monitor</p>
+      <a class="side-item" data-nav="console.html" href="console.html"><span data-icon="activity"></span>Overview</a>
+      <a class="side-item" data-nav="logs.html" href="logs.html"><span data-icon="server"></span>Access logs</a>
+      <a class="side-item" data-nav="security.html" href="security.html"><span data-icon="chip"></span>PQC security</a>
+    </div>
+    <div class="side-group">
+      <p class="side-label">Manage</p>
+      <a class="side-item" data-nav="identities.html" href="identities.html"><span data-icon="users"></span>Identities<span class="count" id="sideIdentityCount"></span></a>
+      <a class="side-item" data-nav="assets.html" href="assets.html"><span data-icon="file"></span>Protected assets</a>
+      <a class="side-item" data-nav="killswitch.html" href="killswitch.html"><span data-icon="bolt"></span>Killswitch</a>
+    </div>
+    <div class="side-group">
+      <p class="side-label">Develop</p>
+      <a class="side-item" data-nav="integrations.html" href="integrations.html"><span data-icon="key"></span>API &amp; SDK</a>
+      <a class="side-item" data-nav="dashboard.html" href="dashboard.html"><span data-icon="audit"></span>Operations board</a>
+    </div>
+    <div class="side-group">
+      <p class="side-label">Workspace</p>
+      <a class="side-item" data-nav="settings.html" href="settings.html"><span data-icon="settings"></span>Settings</a>
+    </div>
+    <div class="side-foot">
+      <div class="side-engine">
+        <div class="k">Engine</div>
+        <div class="v"><span class="dot"></span>ML-KEM-768 · 3.8 ms</div>
+      </div>
+    </div>
+  </aside>
+  <div class="side-scrim" id="sideScrim"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn" data-icon="menu" aria-label="Toggle menu"></button>
+      <label class="gsearch"><span data-icon="search"></span><input type="text" placeholder="Search identities, assets, request IDs…" aria-label="Search"><kbd>⌘K</kbd></label>
+      <div class="top-right">
+        <div class="env-seg"><button class="active" type="button">Production</button><button type="button">Test</button></div>
+        <span class="sync-status"><span class="dot"></span>sync · checkmate-guard.vercel.app</span>
+        <span class="avatar">AS</span>
+      </div>
+    </header>
+
+    <main class="page">
+      <div class="page-head">
+        <div>
+          <span class="mono-tag">Workspace · org_silica</span>
+          <h1>Settings.</h1>
+          <p class="sub">Tenant isolation, engine parameters, audit retention and containment controls. Demonstration state only; no live credentials are transmitted.</p>
+        </div>
+      </div>
+
+      <div class="board2">
+        <section class="panel span-8" aria-label="Organization tenants">
+          <div class="panel-head">
+            <h2><span data-icon="building"></span> Organizations &amp; isolation</h2>
+            <span class="panel-tag">multi-tenant</span>
+          </div>
+          <div class="fact-grid" style="margin-bottom:16px">
+            <div class="fact"><div class="k">Organization</div><div class="v">org_silica</div></div>
+            <div class="fact"><div class="k">Plan · demo</div><div class="v">SecOps pilot · 15 seats</div></div>
+            <div class="fact"><div class="k">Control plane</div><div class="v">checkmate-guard.vercel.app</div></div>
+            <div class="fact"><div class="k">Region</div><div class="v">eu-west · us-east · ap-south roster</div></div>
+          </div>
+          <table class="tbl">
+            <colgroup><col style="width:26%"><col style="width:22%"><col style="width:24%"><col style="width:28%"></colgroup>
+            <thead><tr><th>Tenant</th><th>Identities</th><th>Protected assets</th><th>Isolation</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">org_silica</td><td class="sub mono">8 active · 3 locked</td><td class="sub mono">8 envelopes</td><td><span class="badge allow">keys isolated</span></td></tr>
+              <tr><td class="mono">org_company_xyz</td><td class="sub mono">provisioned on demand</td><td class="sub mono">separate vault</td><td><span class="badge std">no shared secrets</span></td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="panel span-4" aria-label="Team">
+          <div class="panel-head">
+            <h2><span data-icon="users"></span> Team</h2>
+            <span class="panel-tag">admins</span>
+          </div>
+          <table class="tbl">
+            <colgroup><col style="width:68%"><col style="width:32%"></colgroup>
+            <tbody>
+              <tr><td><div class="cell-main"><span class="avatar tiny">AS</span><span class="meta"><span class="name">Admin user</span><span class="handle">owner</span></span></div></td><td><span class="badge lock">Admin</span></td></tr>
+              <tr><td><div class="cell-main"><span class="avatar tiny">DW</span><span class="meta"><span class="name">Dana Whitfield</span><span class="handle">security-ops</span></span></div></td><td><span class="badge pq">Ops</span></td></tr>
+              <tr><td><div class="cell-main"><span class="avatar tiny">AR</span><span class="meta"><span class="name">Alice Rao</span><span class="handle">contract-developer</span></span></div></td><td><span class="badge std">Member</span></td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="panel span-6" aria-label="Engine configuration">
+          <div class="panel-head">
+            <h2><span data-icon="chip"></span> Engine configuration</h2>
+            <span class="panel-tag">contract v1</span>
+          </div>
+          <div class="fact-grid">
+            <div class="fact"><div class="k">KEM suite</div><div class="v">ML-KEM-768 · FIPS 203</div></div>
+            <div class="fact"><div class="k">Verify latency</div><div class="v">3.8 ms · budget &lt; 2000 ms</div></div>
+            <div class="fact"><div class="k">State locking</div><div class="v">portalocker · LOCK_EX</div></div>
+            <div class="fact"><div class="k">Atomic commit</div><div class="v">.state_&lt;pid&gt;_&lt;uuid&gt;.tmp → os.replace</div></div>
+            <div class="fact"><div class="k">Offline policy</div><div class="v">fail closed · DENY at boundary</div></div>
+            <div class="fact"><div class="k">Secret residue</div><div class="v">zero · scrubbed after system call</div></div>
+          </div>
+        </section>
+
+        <section class="panel span-6" aria-label="Audit retention">
+          <div class="panel-head">
+            <h2><span data-icon="audit"></span> Audit &amp; compliance</h2>
+            <span class="panel-tag">SOC 2 · ISO 27001</span>
+          </div>
+          <table class="tbl">
+            <tbody>
+              <tr><td class="mono" style="font-size:12px">Decision retention</td><td class="sub mono">90 days indexed by request_id</td></tr>
+              <tr><td class="mono" style="font-size:12px">Denied payloads</td><td class="sub mono">non-disclosure · zero secret bytes</td></tr>
+              <tr><td class="mono" style="font-size:12px">Revocation proofs</td><td class="sub mono">signed actor + timestamp</td></tr>
+              <tr><td class="mono" style="font-size:12px">Exports</td><td class="sub mono">JSON / CSV from the logs page</td></tr>
+            </tbody>
+          </table>
+          <div class="export-row" style="margin-top:16px">
+            <a class="btn-outline btn-sm" href="logs.html"><span data-icon="download"></span> Open audit explorer</a>
+          </div>
+        </section>
+
+        <section class="danger-panel span-12" aria-label="Danger zone">
+          <h3><span data-icon="alert"></span> Danger zone</h3>
+          <p>These actions affect the demonstration model. In production, keypair rotation and bulk revocation require admin approval and leave a signed audit trail.</p>
+          <div class="danger-actions">
+            <button class="btn-danger-outline" type="button" data-demo-toast="Keypair rotation queued · demo state"><span data-icon="refresh"></span> Rotate ML-KEM keypair</button>
+            <button class="btn-danger-outline" type="button" id="resetDemoBtn"><span data-icon="trash"></span> Reset demonstration state</button>
+            <button class="btn-danger-outline" type="button" data-demo-toast="Bulk revoke requires killswitch approval · demo guard"><span data-icon="ban"></span> Bulk revoke identities</button>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+<div class="toast" role="status"></div>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

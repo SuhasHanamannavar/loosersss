@@ -1,5 +1,6 @@
 # Local scratch / analysis artifacts
 .tmp-tool-results/
+.preview/
 
 # OS / editor
 .DS_Store

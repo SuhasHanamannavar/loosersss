@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkmate · PQC Security</title>
+  <meta name="description" content="ML-KEM-768 cryptographic inspector: public key bytes, encapsulation outputs, HMAC proof, harvest-now decrypt-later margin and security invariants.">
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/console.css">
+  <link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="side" id="side">
+    <a class="side-brand" href="console.html"><span class="mark" data-icon="king"></span><span class="word">CHECKMATE</span></a>
+    <button class="side-org" type="button"><span data-icon="building"></span>org_silica<span class="chev" data-icon="chevron-down"></span></button>
+    <p class="side-org-note">Multi-tenant · API keys and rosters isolated per organization</p>
+    <div class="side-group">
+      <p class="side-label">Monitor</p>
+      <a class="side-item" data-nav="console.html" href="console.html"><span data-icon="activity"></span>Overview</a>
+      <a class="side-item" data-nav="logs.html" href="logs.html"><span data-icon="server"></span>Access logs</a>
+      <a class="side-item" data-nav="security.html" href="security.html"><span data-icon="chip"></span>PQC security</a>
+    </div>
+    <div class="side-group">
+      <p class="side-label">Manage</p>
+      <a class="side-item" data-nav="identities.html" href="identities.html"><span data-icon="users"></span>Identities<span class="count" id="sideIdentityCount"></span></a>
+      <a class="side-item" data-nav="assets.html" href="assets.html"><span data-icon="file"></span>Protected assets</a>
+      <a class="side-item" data-nav="killswitch.html" href="killswitch.html"><span data-icon="bolt"></span>Killswitch</a>
+    </div>
+    <div class="side-group">
+      <p class="side-label">Develop</p>
+      <a class="side-item" data-nav="integrations.html" href="integrations.html"><span data-icon="key"></span>API &amp; SDK</a>
+      <a class="side-item" data-nav="dashboard.html" href="dashboard.html"><span data-icon="audit"></span>Operations board</a>
+    </div>
+    <div class="side-group">
+      <p class="side-label">Workspace</p>
+      <a class="side-item" data-nav="settings.html" href="settings.html"><span data-icon="settings"></span>Settings</a>
+    </div>
+    <div class="side-foot">
+      <div class="side-engine">
+        <div class="k">Engine</div>
+        <div class="v"><span class="dot"></span>ML-KEM-768 · 3.8 ms</div>
+      </div>
+    </div>
+  </aside>
+  <div class="side-scrim" id="sideScrim"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn" data-icon="menu" aria-label="Toggle menu"></button>
+      <label class="gsearch"><span data-icon="search"></span><input type="text" placeholder="Search identities, assets, request IDs…" aria-label="Search"><kbd>⌘K</kbd></label>
+      <div class="top-right">
+        <div class="env-seg"><button class="active" type="button">Production</button><button type="button">Test</button></div>
+        <span class="sync-status"><span class="dot"></span>sync · checkmate-guard.vercel.app</span>
+        <span class="avatar">AS</span>
+      </div>
+    </header>
+
+    <main class="page">
+      <div class="page-head">
+        <div>
+          <span class="mono-tag">NIST FIPS 203 · Module-Lattice-Based KEM</span>
+          <h1>PQC security.</h1>
+          <p class="sub">Protected reads encapsulate a fresh secret with ML-KEM-768 (Kyber768). Recorded transcripts cannot be reduced to plaintext by Shor-class quantum attacks; a revoked actor is denied before encapsulation starts.</p>
+        </div>
+        <div class="actions">
+          <a class="btn-outline" href="integrations.html"><span data-icon="terminal"></span>SDK contract</a>
+        </div>
+      </div>
+
+      <div class="board2">
+        <section class="panel span-8" id="inspector" aria-label="Cryptographic inspector">
+          <div class="panel-head">
+            <h2><span data-icon="chip"></span>Cryptographic inspector</h2>
+            <span class="panel-tag">op · protected_read</span>
+          </div>
+          <label class="field-label">Caller public key · 1184 bytes · Kyber768 raw encoding</label>
+          <div class="hexbox" id="pubKeyBox">—</div>
+          <div style="margin-top:14px; display:flex; gap:12px; flex-wrap:wrap; align-items:center">
+            <button class="btn-ghost" id="kemRun"><span data-icon="bolt"></span> Run encapsulation</button>
+            <span class="verify-line" id="verifyLine"><span data-icon="check"></span> awaiting challenge</span>
+          </div>
+          <div class="kem-out">
+            <div class="kem-cell"><div class="k">KEM ciphertext · 1088 B</div><div class="v muted" id="outCt">—</div></div>
+            <div class="kem-cell"><div class="k">Shared secret · 32 B</div><div class="v muted" id="outSs">—</div></div>
+            <div class="kem-cell"><div class="k">Replay nonce · 12 B</div><div class="v muted" id="outNonce">—</div></div>
+            <div class="kem-cell"><div class="k">HMAC-SHA-256 proof · 64 hex</div><div class="v muted" id="outProof">—</div></div>
+          </div>
+          <p class="audit-hint">Dual-version runtime: legacy engine <span class="mono">pqcrypto.kem.kyber768</span>; modern engine <span class="mono">pqcrypto.kem.ml_kem_768</span> (keygen / encaps / decaps).</p>
+        </section>
+
+        <section class="panel span-4" aria-label="Crypto parameters">
+          <div class="panel-head">
+            <h2><span data-icon="key"></span>Suite parameters</h2>
+            <span class="panel-tag">category 1</span>
+          </div>
+          <div class="fact-grid" style="grid-template-columns:1fr">
+            <div class="fact"><div class="k">Algorithm</div><div class="v">ML-KEM-768 · FIPS 203</div></div>
+            <div class="fact"><div class="k">Public key</div><div class="v">1184 bytes</div></div>
+            <div class="fact"><div class="k">Ciphertext</div><div class="v">1088 bytes</div></div>
+            <div class="fact"><div class="k">Shared secret</div><div class="v">32 bytes · ephemeral</div></div>
+            <div class="fact"><div class="k">Payload cipher</div><div class="v">AES-256-GCM · tag verified</div></div>
+            <div class="fact"><div class="k">Proof</div><div class="v">HMAC-SHA-256 over nonce + actor</div></div>
+            <div class="fact"><div class="k">Zero residue</div><div class="v">session key scrubbed after the system call</div></div>
+          </div>
+        </section>
+
+        <section class="panel span-12" aria-label="Harvest-now margin">
+          <div class="panel-head">
+            <h2><span data-icon="shield"></span>Harvest-now · decrypt-later margin</h2>
+            <span class="panel-tag">threat: Shor-class quantum compute</span>
+          </div>
+          <div class="hndl" style="margin-top:0">
+            <div class="hndl-row broken"><span class="alg">RSA-2048</span><span class="hndl-track"><i></i></span><span class="hndl-state">broken · Shor</span></div>
+            <div class="hndl-row broken"><span class="alg">ECDH P-256</span><span class="hndl-track"><i></i></span><span class="hndl-state">broken · Shor</span></div>
+            <div class="hndl-row secure"><span class="alg">ML-KEM-768</span><span class="hndl-track"><i></i></span><span class="hndl-state">resistant · FIPS 203</span></div>
+          </div>
+        </section>
+
+        <section class="panel span-12" aria-label="Security invariants">
+          <div class="panel-head">
+            <h2><span data-icon="audit"></span>Enforced invariants</h2>
+            <span class="panel-tag">contract v1</span>
+          </div>
+          <ol class="check-list">
+            <li><span class="n">I</span><span><strong>identity_disabled</strong> — after revoke, zero later <span class="mono" style="font-family:var(--font-mono)">read</span> or <span class="mono" style="font-family:var(--font-mono)">protected_read</span> returns plaintext, even if cryptographic keys are still valid.</span></li>
+            <li><span class="n">II</span><span><strong>Post-quantum forward secrecy</strong> — protected reads use ephemeral ML-KEM-768 encapsulation; eavesdropped transcripts yield no plaintext to quantum-equipped attackers.</span></li>
+            <li><span class="n">III</span><span><strong>Auditable non-repudiation</strong> — every decision indexes a request_id; denied responses carry no secret content; evidence is queryable through <span class="mono" style="font-family:var(--font-mono)">audit</span>.</span></li>
+          </ol>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+<div class="toast" role="status"></div>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

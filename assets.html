@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkmate · Protected Assets</title>
+  <meta name="description" content="Envelope store: .env files, database connection strings, Stripe keys and financial exports sealed under ML-KEM-768 with owner-only policy.">
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/console.css">
+  <link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="side" id="side">
+    <a class="side-brand" href="console.html"><span class="mark" data-icon="king"></span><span class="word">CHECKMATE</span></a>
+    <button class="side-org" type="button"><span data-icon="building"></span>org_silica<span class="chev" data-icon="chevron-down"></span></button>
+    <p class="side-org-note">Multi-tenant · API keys and rosters isolated per organization</p>
+    <div class="side-group">
+      <p class="side-label">Monitor</p>
+      <a class="side-item" data-nav="console.html" href="console.html"><span data-icon="activity"></span>Overview</a>
+      <a class="side-item" data-nav="logs.html" href="logs.html"><span data-icon="server"></span>Access logs</a>
+      <a class="side-item" data-nav="security.html" href="security.html"><span data-icon="chip"></span>PQC security</a>
+    </div>
+    <div class="side-group">
+      <p class="side-label">Manage</p>
+      <a class="side-item" data-nav="identities.html" href="identities.html"><span data-icon="users"></span>Identities<span class="count" id="sideIdentityCount"></span></a>
+      <a class="side-item" data-nav="assets.html" href="assets.html"><span data-icon="file"></span>Protected assets</a>
+      <a class="side-item" data-nav="killswitch.html" href="killswitch.html"><span data-icon="bolt"></span>Killswitch</a>
+    </div>
+    <div class="side-group">
+      <p class="side-label">Develop</p>
+      <a class="side-item" data-nav="integrations.html" href="integrations.html"><span data-icon="key"></span>API &amp; SDK</a>
+      <a class="side-item" data-nav="dashboard.html" href="dashboard.html"><span data-icon="audit"></span>Operations board</a>
+    </div>
+    <div class="side-group">
+      <p class="side-label">Workspace</p>
+      <a class="side-item" data-nav="settings.html" href="settings.html"><span data-icon="settings"></span>Settings</a>
+    </div>
+    <div class="side-foot">
+      <div class="side-engine">
+        <div class="k">Engine</div>
+        <div class="v"><span class="dot"></span>ML-KEM-768 · 3.8 ms</div>
+      </div>
+    </div>
+  </aside>
+  <div class="side-scrim" id="sideScrim"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn" data-icon="menu" aria-label="Toggle menu"></button>
+      <label class="gsearch"><span data-icon="search"></span><input type="text" placeholder="Search identities, assets, request IDs…" aria-label="Search"><kbd>⌘K</kbd></label>
+      <div class="top-right">
+        <div class="env-seg"><button class="active" type="button">Production</button><button type="button">Test</button></div>
+        <span class="sync-status"><span class="dot"></span>sync · checkmate-guard.vercel.app</span>
+        <span class="avatar">AS</span>
+      </div>
+    </header>
+
+    <main class="page">
+      <div class="page-head">
+        <div>
+          <span class="mono-tag">Envelope store · owner_allowed policy</span>
+          <h1>Protected assets.</h1>
+          <p class="sub">Connection strings, Stripe customer keys, .env files and financial exports are sealed as ephemeral envelopes. Plaintext exists only for the owner, only during the system call, and only after a successful verification.</p>
+        </div>
+        <div class="actions">
+          <button class="btn-ghost" data-modal-open="protectModal"><span data-icon="plus"></span>Protect new asset</button>
+          <a class="btn-outline" href="security.html"><span data-icon="chip"></span>Open PQC inspector</a>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="tabs" role="tablist" aria-label="Asset tier filter">
+          <button class="active" type="button" data-tier-filter="all">All assets</button>
+          <button type="button" data-tier-filter="pq">PQ protected</button>
+          <button type="button" data-tier-filter="std">Standard</button>
+        </div>
+        <div class="tool-search">
+          <span data-icon="search"></span>
+          <input id="assetSearch" type="text" placeholder="Filter by asset id, kind, owner…">
+        </div>
+      </div>
+
+      <div class="dt">
+        <table class="dt-table">
+          <colgroup><col style="width:26%"><col style="width:13%"><col style="width:17%"><col style="width:22%"><col style="width:10%"><col style="width:12%"></colgroup>
+          <thead><tr><th>Asset</th><th>Owner</th><th>Tier</th><th>Policy rule</th><th>Size</th><th>Last accessed</th></tr></thead>
+          <tbody id="assetRows"></tbody>
+        </table>
+        <div class="dt-foot">
+          <span>Protected reads run ML-KEM-768 encapsulation · 1088 B ciphertext · 32 B shared secret</span>
+          <span>non-disclosure verified on deny</span>
+        </div>
+      </div>
+
+      <section class="panel" style="margin-top:18px">
+        <div class="panel-head">
+          <h2><span data-icon="layers"></span>How an envelope is sealed</h2>
+          <span class="panel-tag">zero secret residue</span>
+        </div>
+        <ol class="check-list">
+          <li><span class="n">01</span><span><strong>Setup</strong> generates the ML-KEM-768 keypair (1184 B public key) for the organization. The private key never leaves the control plane.</span></li>
+          <li><span class="n">02</span><span>A protected read encapsulates a fresh 32-byte shared secret with the public key → 1088 B ciphertext; payload encrypts under AES-256-GCM with an HMAC-SHA-256 proof.</span></li>
+          <li><span class="n">03</span><span>The session key lives only in volatile memory for the duration of the system call and is scrubbed after plaintext consumption.</span></li>
+          <li><span class="n">04</span><span>After <code style="font-family:var(--font-mono)">revoke</code>, the decapsulation key material is locked behind non-invertible state; disk and memory inspection yields only ciphertext.</span></li>
+        </ol>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- Protect asset modal -->
+<div class="modal-backdrop" id="protectModal-backdrop"></div>
+<div class="modal" id="protectModal" role="dialog" aria-modal="true" aria-labelledby="protectTitle">
+  <div class="modal-head">
+    <div>
+      <h3 id="protectTitle">Protect a new asset</h3>
+      <p>Register a file, key or export against an owner. The engine wraps it in a PQ envelope before the first read.</p>
+    </div>
+    <button class="modal-close" type="button" data-modal-close data-icon="close" aria-label="Close"></button>
+  </div>
+  <form id="protectForm">
+    <div class="modal-body">
+      <div class="field"><label for="newAssetId">Asset identifier</label><input id="newAssetId" type="text" placeholder="e.g. staging-stripe-webhook-secret"></div>
+      <div class="field"><label for="newAssetKind">Kind</label>
+        <select id="newAssetKind"><option>env-file</option><option>connection-string</option><option>api-keys</option><option>data-export</option><option>seed-note</option><option>document</option></select>
+      </div>
+      <div class="field"><label for="newAssetOwner">Owner actor</label>
+        <select id="newAssetOwner"><option>dana</option><option>alice</option><option>bhargav</option><option>carlos</option><option>eva</option></select>
+      </div>
+      <p class="audit-hint" style="margin-top:4px">Policy: <span class="mono">owner_allowed · protected_read required</span>. Standard-tier files use <span class="mono">owner_allowed · standard read</span>.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-outline" type="button" data-modal-close>Cancel</button>
+      <button class="btn-ghost" type="submit"><span data-icon="lock"></span>Seal envelope</button>
+    </div>
+  </form>
+</div>
+
+<div class="toast" role="status"></div>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
