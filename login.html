@@ -296,11 +296,7 @@
           time: Date.now()
         }));
         setTimeout(function () {
-          var dest = redirectTarget;
-          if (dest.indexOf("activate=1") === -1) {
-            dest += (dest.indexOf("?") === -1 ? "?activate=1" : "&activate=1");
-          }
-          window.location.replace(dest);
+          window.location.replace(redirectTarget);
         }, 500);
         return;
       } else {
@@ -320,11 +316,7 @@
           time: Date.now()
         }));
         setTimeout(function () {
-          var dest = redirectTarget;
-          if (dest.indexOf("activate=1") === -1) {
-            dest += (dest.indexOf("?") === -1 ? "?activate=1" : "&activate=1");
-          }
-          window.location.replace(dest);
+          window.location.replace(redirectTarget);
         }, 500);
         return;
       }
