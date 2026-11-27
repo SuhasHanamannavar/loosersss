@@ -74,6 +74,30 @@ module.exports = async function handler(req, res) {
         return res.status(200).json({ ok: true, id: keyId, status: 'REVOKED' });
       }
 
+      if (action === 'restore') {
+        const keyId = body.id || body.keyId;
+        if (!keyId) {
+          return res.status(400).json({ ok: false, error: 'Key ID is required to restore' });
+        }
+        if (client) {
+          const updateCmd = new UpdateItemCommand({
+            TableName: DATA_TABLE,
+            Key: {
+              PK: { S: 'CHECKMATE#KEYS' },
+              SK: { S: `KEY#${keyId}` }
+            },
+            UpdateExpression: 'SET #st = :act, restored_at = :now REMOVE revoked_at',
+            ExpressionAttributeNames: { '#st': 'status' },
+            ExpressionAttributeValues: {
+              ':act': { S: 'ACTIVE' },
+              ':now': { S: new Date().toISOString() }
+            }
+          });
+          await client.send(updateCmd);
+        }
+        return res.status(200).json({ ok: true, id: keyId, status: 'ACTIVE' });
+      }
+
       // Generate a new secure API Key
       const keyName = (body.name || 'Developer Workspace Key').trim();
       const envType = body.env || 'live';

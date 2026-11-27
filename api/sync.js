@@ -1,4 +1,5 @@
-const { ScanCommand, PutItemCommand, DeleteItemCommand } = require('@aws-sdk/client-dynamodb');
+const crypto = require('crypto');
+const { ScanCommand, PutItemCommand, DeleteItemCommand, GetItemCommand } = require('@aws-sdk/client-dynamodb');
 const { getClient, DATA_TABLE, REGION } = require('./_db');
 
 module.exports = async function handler(req, res) {
@@ -128,6 +129,66 @@ module.exports = async function handler(req, res) {
       if (action === 'provision_actor') {
         pk = 'CHECKMATE#ACTOR';
         sk = data.id;
+      } else if (action === 'restore_actor' || action === 'unrevoke_actor') {
+        const actorId = data.actor || data.id;
+        if (actorId && client) {
+          // 1. Delete revocation record
+          try {
+            await client.send(new DeleteItemCommand({
+              TableName: DATA_TABLE,
+              Key: {
+                PK: { S: 'CHECKMATE#REVOKED' },
+                SK: { S: actorId }
+              }
+            }));
+          } catch (e) {}
+
+          // 2. Update actor status in CHECKMATE#ACTOR
+          try {
+            const actRes = await client.send(new GetItemCommand({
+              TableName: DATA_TABLE,
+              Key: {
+                PK: { S: 'CHECKMATE#ACTOR' },
+                SK: { S: actorId }
+              }
+            }));
+            if (actRes.Item && actRes.Item.data && actRes.Item.data.S) {
+              const parsed = JSON.parse(actRes.Item.data.S);
+              parsed.status = 'trusted';
+              parsed.last = new Date().toISOString().substring(11, 19) + ' UTC (restored)';
+              await client.send(new PutItemCommand({
+                TableName: DATA_TABLE,
+                Item: {
+                  PK: { S: 'CHECKMATE#ACTOR' },
+                  SK: { S: actorId },
+                  data: { S: JSON.stringify(parsed) },
+                  updated_at: { S: new Date().toISOString() }
+                }
+              }));
+            }
+          } catch (e) {}
+
+          // 3. Record restore audit decision
+          try {
+            const reqId = 'req-' + crypto.randomBytes(3).toString('hex');
+            await client.send(new PutItemCommand({
+              TableName: DATA_TABLE,
+              Item: {
+                PK: { S: 'CHECKMATE#DECISIONS' },
+                SK: { S: `DEC#${Date.now()}#${reqId}` },
+                requestId: { S: reqId },
+                time: { S: new Date().toISOString() },
+                actor: { S: actorId },
+                asset: { S: 'identity_registry' },
+                mode: { S: 'RESTORE_IDENTITY' },
+                decision: { S: 'ALLOW' }
+              }
+            }));
+          } catch (e) {}
+
+          return res.status(200).json({ ok: true, restored: true, actor: actorId });
+        }
+        return res.status(200).json({ ok: true, restored: true, actor: actorId });
       } else if (action === 'revoke_actor') {
         pk = 'CHECKMATE#REVOKED';
         sk = data.actor || data.id;

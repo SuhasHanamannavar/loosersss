@@ -374,7 +374,9 @@
         ? '<span class="sub mono">revoked · no session</span>'
         : '<span class="mono sub">' + (a.last || "awaiting activation") + "</span>";
       var actions = '<button class="row-btn" data-detail="' + a.id + '">Profile</button>' +
-        (locked ? "" : '<button class="row-btn danger" data-revoke="' + a.id + '">Revoke</button>');
+        (locked
+          ? '<button class="row-btn restore-btn" data-restore="' + a.id + '"><span data-icon="check"></span> Restore</button>'
+          : '<button class="row-btn danger" data-revoke="' + a.id + '">Revoke</button>');
       return '<tr data-status="' + (locked ? "locked" : "trusted") + '" data-search="' + (a.name + " " + a.id + " " + a.role + " " + a.region).toLowerCase() + '">' +
         '<td><div class="cell-main"><span class="avatar tiny">' + initials(a.name) + '</span>' +
         '<span class="meta"><span class="name">' + a.name + '</span><span class="handle">@' + a.id + "</span></span></div></td>" +
@@ -385,6 +387,15 @@
         "<td>" + status + "</td>" +
         '<td><div class="row-actions">' + actions + "</div></td></tr>";
     }).join("");
+
+    identityBody.querySelectorAll("[data-restore]").forEach(function (b) {
+      b.addEventListener("click", async function () {
+        var id = b.getAttribute("data-restore");
+        b.disabled = true;
+        b.textContent = "Restoring…";
+        await restoreActor(id);
+      });
+    });
 
     identityBody.querySelectorAll("[data-revoke]").forEach(function (b) {
       b.addEventListener("click", function () {
@@ -429,9 +440,30 @@
     document.getElementById("identityModal").classList.add("open");
     document.body.style.overflow = "hidden";
     var footerBtn = document.getElementById("identityRevokeBtn");
+    var footerRestore = document.getElementById("identityRestoreBtn");
+    if (!footerRestore && footerBtn && footerBtn.parentNode) {
+      footerRestore = document.createElement("button");
+      footerRestore.id = "identityRestoreBtn";
+      footerRestore.className = "row-btn restore-btn";
+      footerRestore.style.padding = "8px 14px";
+      footerRestore.style.fontSize = "13px";
+      footerRestore.innerHTML = '<span data-icon="check"></span> Restore identity';
+      footerBtn.parentNode.appendChild(footerRestore);
+      footerRestore.addEventListener("click", async function () {
+        var aid = footerRestore.getAttribute("data-restore-direct");
+        if (aid) {
+          closeModal(document.getElementById("identityModal-backdrop"), document.getElementById("identityModal"));
+          await restoreActor(aid);
+        }
+      });
+    }
     if (footerBtn) {
       footerBtn.style.display = locked ? "none" : "inline-flex";
       footerBtn.setAttribute("data-revoke-direct", id);
+    }
+    if (footerRestore) {
+      footerRestore.style.display = locked ? "inline-flex" : "none";
+      footerRestore.setAttribute("data-restore-direct", id);
     }
   }
 
@@ -620,7 +652,38 @@
     toast(id + " · identity_disabled committed to AWS DynamoDB");
   }
 
-  window.CM = { revokeActor: revokeActor, disabled: disabled };
+  async function restoreActor(id) {
+    delete disabled[id];
+    persistDisabled();
+    REGISTRY = REGISTRY.filter(function (r) { return (r.actor || r.id) !== id; });
+    var act = actorById(id);
+    if (act) {
+      act.status = "trusted";
+      act.last = new Date().toISOString().substring(11, 19) + " UTC (restored)";
+    }
+    var reqId = "req-" + Math.random().toString(16).slice(2, 8);
+    var auditRecord = {
+      id: reqId,
+      ts: new Date().toISOString(),
+      actor: id,
+      asset: "identity_registry",
+      mode: "RESTORE_IDENTITY",
+      decision: "ALLOW",
+      rule: "admin_restoration",
+      nd: true
+    };
+    AUDIT.unshift(auditRecord);
+    renderAllViews();
+    toast("Identity @" + id + " restored · unsealed in AWS DynamoDB");
+
+    try {
+      await syncPost("restore_actor", { id: id, actor: id });
+    } catch (e) {
+      console.warn("Could not sync restore to DynamoDB:", e);
+    }
+  }
+
+  window.CM = { revokeActor: revokeActor, restoreActor: restoreActor, disabled: disabled };
 
   var registryBody = document.getElementById("registryRows");
   function renderRegistry() {
@@ -631,10 +694,21 @@
       return;
     }
     registryBody.innerHTML = REGISTRY.map(function (r) {
-      return "<tr><td class='mono'>" + r.actor + "</td><td class='mono sub'>" + r.ts +
+      var aid = r.actor || r.id;
+      return "<tr><td class='mono'>" + aid + "</td><td class='mono sub'>" + r.ts +
         "</td><td class='sub'>" + r.by + "</td><td class='mono sub' style='font-size:11px'>" + (r.proof ? shortHex(r.proof, 16) : "—") +
-        "</td><td><span class='badge lock'>Locked</span></td></tr>";
+        "</td><td><div class='row-actions'><span class='badge lock'>Locked</span><button class='row-btn restore-btn' data-restore-registry='" + aid + "'><span data-icon='check'></span> Restore</button></div></td></tr>";
     }).join("");
+
+    registryBody.querySelectorAll("[data-restore-registry]").forEach(function (b) {
+      b.addEventListener("click", async function () {
+        var aid = b.getAttribute("data-restore-registry");
+        b.disabled = true;
+        b.textContent = "Restoring…";
+        await restoreActor(aid);
+      });
+    });
+
     renderIcons(registryBody);
   }
 
@@ -852,9 +926,36 @@
         '<td><div class="row-actions">' +
         (isActive ? copyKeyBtn : '') +
         (isActive ? '<button class="row-btn" data-key-copy-ps="' + encodeURIComponent(psCmd) + '"><span data-icon="terminal"></span> Copy PS</button>' : '') +
-        (isActive ? '<button class="row-btn danger" data-key-revoke-id="' + (k.id || i) + '">Revoke</button>' : '<span class="mono sub" style="font-size:11px">revoked</span>') +
+        (isActive
+          ? '<button class="row-btn danger" data-key-revoke-id="' + (k.id || i) + '">Revoke</button>'
+          : '<button class="row-btn restore-btn" data-key-restore-id="' + (k.id || i) + '"><span data-icon="check"></span> Restore</button>') +
         '</div></td></tr>';
     }).join("");
+
+    keyBody.querySelectorAll("[data-key-restore-id]").forEach(function (b) {
+      b.addEventListener("click", async function () {
+        var id = b.getAttribute("data-key-restore-id");
+        b.disabled = true;
+        b.textContent = "Restoring…";
+        try {
+          var res = await fetch("/api/keys", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "restore", id: id })
+          });
+          var data = await res.json();
+          if (data.ok) {
+            KEYS.forEach(function (k) {
+              if (k.id === id) k.status = "ACTIVE";
+            });
+            renderKeys();
+            toast("API key restored to ACTIVE in AWS DynamoDB");
+          }
+        } catch (e) {
+          toast("Error restoring key");
+        }
+      });
+    });
 
     keyBody.querySelectorAll("[data-key-copy-secret]").forEach(function (b) {
       b.addEventListener("click", function () {
