@@ -17,7 +17,8 @@ module.exports = async function handler(req, res) {
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
     const apiKey = (body.apiKey || body.key || req.headers['x-checkmate-key'] || req.query?.apiKey || '').trim();
-    const actor = (body.actor || body.developer || req.query?.actor || 'developer').trim().toLowerCase();
+    const rawActor = (body.actor || body.developer || req.query?.actor || 'developer').trim().toLowerCase();
+    const actor = rawActor.replace(/^@/, '').split('@')[0];
     const asset = (body.asset || body.document || req.query?.asset || 'silica-document').trim();
     const hostname = (body.hostname || req.query?.hostname || 'workstation').trim();
     const action = (body.action || 'protected_read').trim();
@@ -70,10 +71,11 @@ module.exports = async function handler(req, res) {
     const requestId = 'req-' + crypto.randomBytes(3).toString('hex');
     const now = new Date().toISOString();
 
-    // 1. CHECK IF ACTOR IS IN DISABLED / REVOKED REGISTRY
+    // 1. CHECK IF ACTOR IS IN DISABLED / REVOKED REGISTRY OR MARKED LOCKED
     let isRevoked = false;
     if (client) {
       try {
+        // Check CHECKMATE#REVOKED by actor and rawActor
         const revCheck = await client.send(new GetItemCommand({
           TableName: DATA_TABLE,
           Key: {
@@ -83,6 +85,36 @@ module.exports = async function handler(req, res) {
         }));
         if (revCheck && revCheck.Item) {
           isRevoked = true;
+        }
+
+        if (!isRevoked && rawActor !== actor) {
+          const revCheck2 = await client.send(new GetItemCommand({
+            TableName: DATA_TABLE,
+            Key: {
+              PK: { S: 'CHECKMATE#REVOKED' },
+              SK: { S: rawActor }
+            }
+          }));
+          if (revCheck2 && revCheck2.Item) isRevoked = true;
+        }
+
+        // Also check CHECKMATE#ACTOR record status
+        if (!isRevoked) {
+          const actorCheck = await client.send(new GetItemCommand({
+            TableName: DATA_TABLE,
+            Key: {
+              PK: { S: 'CHECKMATE#ACTOR' },
+              SK: { S: actor }
+            }
+          }));
+          if (actorCheck && actorCheck.Item && actorCheck.Item.data) {
+            try {
+              const parsed = JSON.parse(actorCheck.Item.data.S);
+              if (parsed.status === 'locked' || parsed.status === 'revoked') {
+                isRevoked = true;
+              }
+            } catch (e) {}
+          }
         }
       } catch (e) {
         console.warn('Revocation check error:', e.message);

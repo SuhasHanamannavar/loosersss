@@ -190,8 +190,36 @@ module.exports = async function handler(req, res) {
         }
         return res.status(200).json({ ok: true, restored: true, actor: actorId });
       } else if (action === 'revoke_actor') {
+        const actorId = data.actor || data.id;
         pk = 'CHECKMATE#REVOKED';
-        sk = data.actor || data.id;
+        sk = actorId;
+
+        // Also update CHECKMATE#ACTOR status to locked
+        if (actorId && client) {
+          try {
+            const actorItem = await client.send(new GetItemCommand({
+              TableName: DATA_TABLE,
+              Key: {
+                PK: { S: 'CHECKMATE#ACTOR' },
+                SK: { S: actorId }
+              }
+            }));
+            if (actorItem && actorItem.Item && actorItem.Item.data) {
+              const actorData = JSON.parse(actorItem.Item.data.S);
+              actorData.status = 'locked';
+              actorData.last = 'revoked · no session';
+              await client.send(new PutItemCommand({
+                TableName: DATA_TABLE,
+                Item: {
+                  PK: { S: 'CHECKMATE#ACTOR' },
+                  SK: { S: actorId },
+                  data: { S: JSON.stringify(actorData) },
+                  updated_at: { S: new Date().toISOString() }
+                }
+              }));
+            }
+          } catch (e) {}
+        }
       } else if (action === 'register_asset') {
         pk = 'CHECKMATE#ASSET';
         sk = data.id;

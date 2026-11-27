@@ -17,14 +17,20 @@ if (-not $Developer) { $Developer = "developer" }
 # Clean developer handle
 $CleanDev = $Developer.ToLower() -replace '[^a-z0-9_-]', ''
 
+if ([string]::IsNullOrWhiteSpace($Path) -and $env:CHECKMATE_TARGET) {
+  $Path = $env:CHECKMATE_TARGET
+}
+
 if ([string]::IsNullOrWhiteSpace($Path)) {
   Write-Host ""
   Write-Host "============================================================" -ForegroundColor DarkGray
   Write-Host " CHECKMATE · ZERO-TRUST DOCUMENT VIEWER" -ForegroundColor White
   Write-Host "============================================================" -ForegroundColor DarkGray
-  $Path = Read-Host "Enter document or file path to view"
+  if ([Environment]::UserInteractive) {
+    $Path = Read-Host "Enter document or file path to view"
+  }
   if ([string]::IsNullOrWhiteSpace($Path)) {
-    Write-Host "[DENY] No file specified. Execution aborted." -ForegroundColor Red
+    Write-Host "[DENY] No file specified. Usage: .\checkmate-view.cmd <file>" -ForegroundColor Red
     return
   }
 }
