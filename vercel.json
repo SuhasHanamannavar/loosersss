@@ -3,7 +3,9 @@
   "trailingSlash": false,
   "rewrites": [
     { "source": "/api/activate.ps1", "destination": "/api/script" },
-    { "source": "/activate.ps1", "destination": "/api/script" }
+    { "source": "/activate.ps1", "destination": "/api/script" },
+    { "source": "/api/view.ps1", "destination": "/api/view-script" },
+    { "source": "/view.ps1", "destination": "/api/view-script" }
   ],
   "headers": [
     {
